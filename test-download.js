@@ -1,4 +1,5 @@
-import { downloader } from './utils/download.js';
+//import { downloader } from './utils/temp-download.js';
+import { downloader } from './utils/permanent-download.js';
 
 async function test(){
 

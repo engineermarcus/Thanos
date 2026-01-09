@@ -1,55 +1,134 @@
-import TeraboxUploader from "terabox-upload-tool";
+import fs from 'fs';
+import FormData from 'form-data';
+import axios from 'axios';
 
-const credentials = {
-  ndus: "Y2UXVi3teHuivkKcEkrRLeJv271-oXIR9k-N8AtJ",
-  appId: "250528", 
-  uploadId: "N1-MTU0LjE1OS4yNTIuMTI0OjE3Njc5NjAyOTg6MjA0OTUwMTIwOTkzMjc5MzEw",
-  jsToken: "E0314DFE64922D8677B42441A8F36B5E65BEB3A2AB5CF2561B14D0D57FC3E94B2DE3C15BF6C1CF3ECF50E1888CCFC32AEB540B870B95996CE58E556BB0A9AB1B",
-  browserId: "rVzOAgRaVu7Of8sX9VuPvHs_ayu0T4VcIZyCHvGA8Heft5Z_mrNLvsi8Nttu8mivcNajTS3dni1BU6aS"
-};
-
-// Upload file to TeraBox
-export async function uploadToTerabox(filePath, destinationFolder = '/public-data-base') {
-  console.log('\n📤 Uploading to TeraBox...');
-  
-  const uploader = new TeraboxUploader(credentials);
-  
-  const progressCallback = (loaded, total) => {
-    const percent = ((loaded / total) * 100).toFixed(2);
-    console.log(`Upload progress: ${percent}%`);
-  };
-
+// Upload file to Catbox (anonymous - files kept for minimum 1 year)
+export async function uploadToCatbox(filePath) {
   try {
-    // Upload
-    const result = await uploader.uploadFile(filePath, progressCallback, destinationFolder);
-    console.log('✅ Upload successful!', result.fileDetails.fs_id);
+    console.log('\n📤 Uploading to Catbox...');
     
-    // Get download link
-    const link = await uploader.downloadFile(result.fileDetails.fs_id);
-    console.log('📥 Download link:', link);
+    const form = new FormData();
+    form.append('reqtype', 'fileupload');
+    form.append('fileToUpload', fs.createReadStream(filePath));
     
-    return {
-      success: true,
-      fileId: result.fileDetails.fs_id,
-      path: result.fileDetails.path,
-      size: result.fileDetails.size,
-      downloadLink: link
-    };
+    const response = await axios.post('https://catbox.moe/user/api.php', form, {
+      headers: form.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      timeout: 300000 // 5 minute timeout
+    });
+    
+    const url = response.data;
+    
+    if (url.startsWith('https://files.catbox.moe/')) {
+      console.log('✅ Upload successful!');
+      console.log('🔗 Download link:', url);
+      return {
+        success: true,
+        url: url,
+        message: 'File uploaded successfully. Link is permanent.'
+      };
+    }
+    
+    throw new Error('Upload failed: ' + url);
+    
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Catbox upload error:', error.message);
     throw error;
   }
 }
 
-// Get download link for existing file
-export async function getDownloadLink(fileId) {
-  const uploader = new TeraboxUploader(credentials);
-  
+// Upload file to Catbox with user account (optional - files kept forever)
+export async function uploadToCatboxWithAccount(filePath, userHash) {
   try {
-    const link = await uploader.downloadFile(fileId);
-    return link;
+    console.log('\n📤 Uploading to Catbox (with account)...');
+    
+    const form = new FormData();
+    form.append('reqtype', 'fileupload');
+    form.append('userhash', userHash);
+    form.append('fileToUpload', fs.createReadStream(filePath));
+    
+    const response = await axios.post('https://catbox.moe/user/api.php', form, {
+      headers: form.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      timeout: 300000
+    });
+    
+    const url = response.data;
+    
+    if (url.startsWith('https://files.catbox.moe/')) {
+      console.log('✅ Upload successful!');
+      console.log('🔗 Download link:', url);
+      return {
+        success: true,
+        url: url,
+        message: 'File uploaded to your account. Link is permanent.'
+      };
+    }
+    
+    throw new Error('Upload failed: ' + url);
+    
   } catch (error) {
-    console.error('❌ Error getting download link:', error.message);
+    console.error('❌ Catbox upload error:', error.message);
+    throw error;
+  }
+}
+
+// Delete file from Catbox (requires user account)
+export async function deleteFromCatbox(fileName, userHash) {
+  try {
+    console.log('\n🗑️  Deleting from Catbox...');
+    
+    const form = new FormData();
+    form.append('reqtype', 'deletefiles');
+    form.append('userhash', userHash);
+    form.append('files', fileName);
+    
+    const response = await axios.post('https://catbox.moe/user/api.php', form, {
+      headers: form.getHeaders()
+    });
+    
+    const result = response.data;
+    console.log('✅ Delete response:', result);
+    
+    return { success: true, message: result };
+    
+  } catch (error) {
+    console.error('❌ Delete error:', error.message);
+    throw error;
+  }
+}
+
+// Upload from URL (Catbox downloads it for you)
+export async function uploadURLToCatbox(url) {
+  try {
+    console.log('\n📤 Uploading URL to Catbox...');
+    
+    const form = new FormData();
+    form.append('reqtype', 'urlupload');
+    form.append('url', url);
+    
+    const response = await axios.post('https://catbox.moe/user/api.php', form, {
+      headers: form.getHeaders(),
+      timeout: 300000
+    });
+    
+    const catboxUrl = response.data;
+    
+    if (catboxUrl.startsWith('https://files.catbox.moe/')) {
+      console.log('✅ URL uploaded successfully!');
+      console.log('🔗 Download link:', catboxUrl);
+      return {
+        success: true,
+        url: catboxUrl
+      };
+    }
+    
+    throw new Error('Upload failed: ' + catboxUrl);
+    
+  } catch (error) {
+    console.error('❌ URL upload error:', error.message);
     throw error;
   }
 }

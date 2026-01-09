@@ -26,6 +26,7 @@
     "google-sr": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^6.21.0",
+    "node-fetch": "^3.3.2",
     "qrcode": "^1.5.3",
     "socket.io": "^4.6.1",
     "terabox-upload-tool": "^1.3.1",
