@@ -1,4 +1,4 @@
-const TeraboxUploader = require("terabox-upload-tool");
+import TeraboxUploader from "terabox-upload-tool";
 
 const credentials = {
   ndus: "Y2UXVi3teHuivkKcEkrRLeJv271-oXIR9k-N8AtJ",
@@ -10,8 +10,22 @@ const credentials = {
 
 const uploader = new TeraboxUploader(credentials);
 
-// Upload file
-const result = await uploader.uploadFile('./video.mp4', true, '/videos');
+// Progress callback function
+const progressCallback = (loaded, total) => {
+  const percent = ((loaded / total) * 100).toFixed(2);
+  console.log(`Upload progress: ${percent}% (${loaded}/${total} bytes)`);
+};
 
-// Download file
-const link = await uploader.downloadFile(fileId);
+try {
+  // Upload file with progress callback
+  const result = await uploader.uploadFile(
+    './sza.mp4',           // file path
+    progressCallback,      // progress callback (not a boolean!)
+    '/my-data-base'        // destination folder
+  );
+  
+  console.log('Upload successful!');
+  console.log('Result:', result);
+} catch (error) {
+  console.error('Upload failed:', error.message);
+}
