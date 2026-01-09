@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import { search } from './search.js';
+import { uploadToTerabox } from './store.js'; // Import from store.js
 
 const execPromise = promisify(exec);
 
@@ -83,7 +84,6 @@ async function validateCookies(config) {
 async function downloadVideo(config, attempt = 1) {
   console.log(`\n🎬 Starting download (attempt ${attempt}/${config.maxRetries})...`);
   
-  // Build command with cookies file
   const command = `pip install yt-dlp && yt-dlp --cookies "${config.cookiesFile}" --no-part --merge-output-format mp4 --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" -o "${config.outputFile}" "${config.url}"`;
   
   console.log(`🔐 Using cookies from ${config.cookiesFile}`);
@@ -91,7 +91,7 @@ async function downloadVideo(config, attempt = 1) {
   try {
     const { stdout, stderr } = await execPromise(command, {
       maxBuffer: 10 * 1024 * 1024,
-      timeout: 120000 // 2 minute timeout
+      timeout: 300000 // 5 minute timeout
     });
     
     if (stdout) console.log(stdout);
@@ -119,84 +119,18 @@ async function downloadVideo(config, attempt = 1) {
   }
 }
 
-// Verify video integrity
-async function verifyVideo(config) {
-  console.log('\n🔍 Verifying video...');
-  
-  if (!await fileExists(config.outputFile)) {
-    throw new Error('Output file not found');
-  }
-  
-  const fileSize = await getFileSize(config.outputFile);
-  console.log(`📦 File size: ${fileSize} MB`);
-  
-  try {
-    const { stderr } = await execPromise(
-      `ffmpeg -v error -i "${config.outputFile}" -f null - 2>&1`
-    );
-    
-    if (stderr && stderr.trim()) {
-      console.log('⚠️  Verification warnings:', stderr);
-      return false;
-    }
-    
-    // Get video info
-    try {
-      const { stdout: probeOutput } = await execPromise(
-        `ffprobe -v quiet -show_entries format=duration -show_entries stream=width,height,codec_name -of json "${config.outputFile}"`
-      );
-      
-      const info = JSON.parse(probeOutput);
-      console.log('✅ Video is valid!');
-      
-      if (info.streams && info.streams.length > 0) {
-        const video = info.streams.find(s => s.codec_type === 'video');
-        const audio = info.streams.find(s => s.codec_type === 'audio');
-        
-        if (video) {
-          console.log(`📹 Resolution: ${video.width}x${video.height}`);
-          console.log(`🎞️  Video Codec: ${video.codec_name}`);
-        }
-        
-        if (audio) {
-          console.log(`🔊 Audio Codec: ${audio.codec_name}`);
-        }
-      }
-      
-      if (info.format && info.format.duration) {
-        console.log(`⏱️  Duration: ${Math.round(info.format.duration)}s`);
-      }
-    } catch {
-      console.log('⚠️  Could not extract video metadata');
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('❌ Verification failed:', error.message);
-    return false;
-  }
-}
-
 // Main execution
-export async function downloader(query) {
+export async function downloader(query, uploadToCloud = true, deleteAfterUpload = true) {
   const startTime = Date.now();
   const meta = await search(query);
   const url = meta.url;
   const title = meta.title;
-  const config = await configure(url, title); // Added await
+  const config = await configure(url, title);
   
   try {
-    console.log('🚀 YouTube Downloader with Remote Cookies\n');
-    
-    // Check if output file already exists
-    if (await fileExists(config.outputFile)) {
-      console.log('⚠️  Output file already exists!');
-      const size = await getFileSize(config.outputFile);
-      console.log(`📦 Existing file size: ${size} MB`);
-      
-      await verifyVideo(config); // Pass config
-      return;
-    }
+    console.log('🚀 YouTube Downloader with TeraBox Integration\n');
+    console.log(`🎵 Video: ${title}`);
+    console.log(`🔗 URL: ${url}\n`);
     
     // Download cookies file if not present
     if (!await fileExists(config.cookiesFile)) {
@@ -207,21 +141,43 @@ export async function downloader(query) {
     }
     
     // Validate cookies
-    if (!await validateCookies(config)) { // Pass config
+    if (!await validateCookies(config)) {
       throw new Error('Invalid cookies file');
     }
     
     // Download video
-    await downloadVideo(config); // Pass config and add await
-    
+    await downloadVideo(config);
     console.log('\n✅ Download complete!');
     
-    // Verify
-    await verifyVideo(config); // Pass config
+    const fileSize = await getFileSize(config.outputFile);
+    console.log(`📦 File size: ${fileSize} MB`);
+    
+    // Upload to TeraBox if enabled
+    let uploadResult = null;
+    if (uploadToCloud) {
+      uploadResult = await uploadToTerabox(config.outputFile); // Use imported function
+    }
+    
+    // Delete local file after upload if enabled
+    if (uploadToCloud && deleteAfterUpload && uploadResult?.success) {
+      console.log('\n🗑️  Deleting local file...');
+      await fs.unlink(config.outputFile);
+      console.log('✅ Local file deleted');
+    }
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`\n🎉 All done in ${duration}s!`);
-    console.log(`📁 Saved as: ${config.outputFile}`);
+    
+    return {
+      success: true,
+      video: {
+        title,
+        url,
+        localFile: deleteAfterUpload ? null : config.outputFile,
+        size: fileSize
+      },
+      terabox: uploadResult
+    };
     
   } catch (error) {
     console.error('\n❌ Process failed:', error.message);
@@ -235,6 +191,6 @@ export async function downloader(query) {
       }
     }
     
-    process.exit(1);
+    throw error;
   }
 }

@@ -8,21 +8,48 @@ const credentials = {
   browserId: "rVzOAgRaVu7Of8sX9VuPvHs_ayu0T4VcIZyCHvGA8Heft5Z_mrNLvsi8Nttu8mivcNajTS3dni1BU6aS"
 };
 
-const uploader = new TeraboxUploader(credentials);
-
-const progressCallback = (loaded, total) => {
-  const percent = ((loaded / total) * 100).toFixed(2);
-  console.log(`Upload progress: ${percent}%`);
-};
-
-try {
-  // Upload
-  const result = await uploader.uploadFile('./sza.mp4', progressCallback, '/my-data-base');
-  console.log('✅ Upload successful!', result.fileDetails.fs_id);
+// Upload file to TeraBox
+export async function uploadToTerabox(filePath, destinationFolder = '/public-data-base') {
+  console.log('\n📤 Uploading to TeraBox...');
   
-  // Download
-  const link = await uploader.downloadFile(result.fileDetails.fs_id);
-  console.log('📥 Download link:', link);
-} catch (error) {
-  console.error('❌ Error:', error.message);
+  const uploader = new TeraboxUploader(credentials);
+  
+  const progressCallback = (loaded, total) => {
+    const percent = ((loaded / total) * 100).toFixed(2);
+    console.log(`Upload progress: ${percent}%`);
+  };
+
+  try {
+    // Upload
+    const result = await uploader.uploadFile(filePath, progressCallback, destinationFolder);
+    console.log('✅ Upload successful!', result.fileDetails.fs_id);
+    
+    // Get download link
+    const link = await uploader.downloadFile(result.fileDetails.fs_id);
+    console.log('📥 Download link:', link);
+    
+    return {
+      success: true,
+      fileId: result.fileDetails.fs_id,
+      path: result.fileDetails.path,
+      size: result.fileDetails.size,
+      downloadLink: link
+    };
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    throw error;
+  }
+}
+
+// Get download link for existing file
+export async function getDownloadLink(fileId) {
+  const uploader = new TeraboxUploader(credentials);
+  
+  try {
+    const link = await uploader.downloadFile(fileId);
+    return link;
+  } catch (error) {
+    console.error('❌ Error getting download link:', error.message);
+    throw error;
+  }
 }
