@@ -1,8 +1,9 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
+import path from 'path';
 import { search } from './search.js';
-import { uploadToTerabox } from './store.js'; // Import from store.js
+import { uploadToTerabox } from './store.js';
 
 const execPromise = promisify(exec);
 
@@ -10,13 +11,24 @@ const execPromise = promisify(exec);
 async function configure(url, title) {
   const config = {
     cookiesUrl: 'https://files.catbox.moe/02cukk.txt',
-    cookiesFile: 'cookies.txt',
+    cookiesFile: path.join('downloads', 'cookies.txt'),
     url: url,
-    outputFile: `${title}.mp4`,
+    outputFile: path.join('downloads', `${title}.mp4`),
     maxRetries: 2,
     retryDelay: 3000
   };
   return config;
+}
+
+// Ensure downloads directory exists
+async function ensureDownloadsDir() {
+  try {
+    await fs.mkdir('downloads', { recursive: true });
+    console.log('✅ Downloads directory ready');
+  } catch (error) {
+    console.error('❌ Failed to create downloads directory:', error.message);
+    throw error;
+  }
 }
 
 // Download file from URL using curl/wget
@@ -120,15 +132,19 @@ async function downloadVideo(config, attempt = 1) {
 }
 
 // Main execution
-export async function downloader(query, uploadToCloud = true, deleteAfterUpload = true) {
+export async function downloader(query) {
   const startTime = Date.now();
-  const meta = await search(query);
-  const url = meta.url;
-  const title = meta.title;
-  const config = await configure(url, title);
   
   try {
-    console.log('🚀 YouTube Downloader with TeraBox Integration\n');
+    // Ensure downloads directory exists
+    await ensureDownloadsDir();
+    
+    const meta = await search(query);
+    const url = meta.url;
+    const title = meta.title.replace(/[/\\?%*:|"<>]/g, '-'); // Sanitize filename
+    const config = await configure(url, title);
+    
+    console.log('🚀 YouTube to TeraBox Uploader\n');
     console.log(`🎵 Video: ${title}`);
     console.log(`🔗 URL: ${url}\n`);
     
@@ -152,14 +168,11 @@ export async function downloader(query, uploadToCloud = true, deleteAfterUpload 
     const fileSize = await getFileSize(config.outputFile);
     console.log(`📦 File size: ${fileSize} MB`);
     
-    // Upload to TeraBox if enabled
-    let uploadResult = null;
-    if (uploadToCloud) {
-      uploadResult = await uploadToTerabox(config.outputFile); // Use imported function
-    }
+    // Upload to TeraBox
+    const uploadResult = await uploadToTerabox(config.outputFile);
     
-    // Delete local file after upload if enabled
-    if (uploadToCloud && deleteAfterUpload && uploadResult?.success) {
+    // Delete local file after successful upload
+    if (uploadResult.success) {
       console.log('\n🗑️  Deleting local file...');
       await fs.unlink(config.outputFile);
       console.log('✅ Local file deleted');
@@ -173,7 +186,6 @@ export async function downloader(query, uploadToCloud = true, deleteAfterUpload 
       video: {
         title,
         url,
-        localFile: deleteAfterUpload ? null : config.outputFile,
         size: fileSize
       },
       terabox: uploadResult
@@ -182,13 +194,21 @@ export async function downloader(query, uploadToCloud = true, deleteAfterUpload 
   } catch (error) {
     console.error('\n❌ Process failed:', error.message);
     
-    // Cleanup partial download
-    if (await fileExists(config.outputFile)) {
-      const size = await getFileSize(config.outputFile);
-      if (size < 0.1) {
-        console.log('🗑️  Cleaning up partial download...');
-        await fs.unlink(config.outputFile);
+    // Cleanup partial download if it exists
+    try {
+      const meta = await search(query);
+      const title = meta.title.replace(/[/\\?%*:|"<>]/g, '-');
+      const outputFile = path.join('downloads', `${title}.mp4`);
+      
+      if (await fileExists(outputFile)) {
+        const size = await getFileSize(outputFile);
+        if (parseFloat(size) < 0.1) {
+          console.log('🗑️  Cleaning up partial download...');
+          await fs.unlink(outputFile);
+        }
       }
+    } catch (cleanupError) {
+      // Ignore cleanup errors
     }
     
     throw error;
