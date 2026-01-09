@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot Authentication</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            max-width: 480px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            padding: 32px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 32px;
+        }
+
+        .status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status.waiting {
+            background: #fff8e1;
+            color: #f57f17;
+            border: 1px solid #ffe082;
+        }
+
+        .status.connected {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #81c784;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .method-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: #25D366;
+        }
+
+        .tab-btn.active {
+            color: #25D366;
+            border-bottom-color: #25D366;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .qr-wrapper {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .qr-box {
+            background: #f9fafb;
+            padding: 24px;
+            border-radius: 8px;
+            display: inline-block;
+            border: 1px solid #e5e7eb;
+        }
+
+        #qrcode img {
+            display: block;
+            border-radius: 4px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #25D366;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #25D366;
+            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1);
+        }
+
+        .form-hint {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: #128C7E;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pairing-display {
+            background: #f9fafb;
+            border: 2px solid #25D366;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .pairing-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pairing-code {
+            font-size: 42px;
+            font-weight: 700;
+            color: #25D366;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 8px 0;
+        }
+
+        .pairing-instruction {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 12px;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 13px;
+            color: #0c4a6e;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #075985;
+        }
+
+        .connected-card {
+            text-align: center;
+        }
+
+        .connected-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+        }
+
+        .connected-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .connected-info {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                margin: 0;
+            }
+
+            .content {
+                padding: 24px;
+            }
+
+            .pairing-code {
+                font-size: 36px;
+                letter-spacing: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WhatsApp Bot</h1>
+            <p>Secure Authentication Portal</p>
+        </div>
+
+        <div class="content">
+            <div id="status" class="status waiting">
+                <span class="status-dot"></span>
+                <span>Initializing connection...</span>
+            </div>
+
+            <div id="auth-section">
+                <div class="method-tabs">
+                    <button class="tab-btn active" onclick="switchTab('qr')">QR Code</button>
+                    <button class="tab-btn" onclick="switchTab('pairing')">Phone Number</button>
+                </div>
+
+                <div id="qr-tab" class="tab-content active">
+                    <div class="qr-wrapper">
+                        <div class="qr-box">
+                            <div id="qrcode">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>How to connect:</strong><br>
+                        Open WhatsApp on your phone → Settings → Linked Devices → Link a Device → Scan the QR code above
+                    </div>
+                </div>
+
+                <div id="pairing-tab" class="tab-content">
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input 
+                            type="tel" 
+                            id="phoneNumber" 
+                            class="form-input" 
+                            placeholder="254712345678"
+                            maxlength="15"
+                        />
+                        <p class="form-hint">Enter with country code, no spaces or symbols</p>
+                    </div>
+
+                    <button class="btn-primary" id="generateBtn" onclick="requestPairingCode()">
+                        Generate Code
+                    </button>
+
+                    <div id="pairing-code-display" class="hidden">
+                        <div class="pairing-display">
+                            <div class="pairing-label">Your Pairing Code</div>
+                            <div class="pairing-code" id="pairingCode">------</div>
+                            <div class="pairing-instruction">Enter this code in WhatsApp</div>
+                        </div>
+
+                        <div class="info-box">
+                            <strong>How to use:</strong><br>
+                            WhatsApp → Settings → Linked Devices → Link a Device → Link with phone number instead → Enter code above
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="connected-section" class="hidden">
+                <div class="connected-card">
+                    <div class="connected-icon">✓</div>
+                    <div class="connected-title">Successfully Connected</div>
+                    <div class="connected-info" id="connected-name">
+                        Your bot is active and monitoring messages
+                    </div>
+                    <button style="display: none;" class="btn-secondary" onclick="logout()">Disconnect</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentTab = 'qr';
+
+        function updateStatus(text, type = 'waiting') {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status ${type}`;
+            statusEl.innerHTML = `
+                <span class="status-dot"></span>
+                <span>${text}</span>
+            `;
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        function requestPairingCode() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            
+            if (!phoneNumber) {
+                alert('Please enter your phone number');
+                return;
+            }
+
+            if (!/^\d{10,15}$/.test(phoneNumber)) {
+                alert('Please enter a valid phone number (10-15 digits only)');
+                return;
+            }
+
+            updateStatus('Generating pairing code...', 'waiting');
+            socket.emit('request-pairing-code', phoneNumber);
+            
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+        }
+
+        socket.on('qr', (qrDataUrl) => {
+            updateStatus('Scan QR code to connect', 'waiting');
+            
+            const qrcodeEl = document.getElementById('qrcode');
+            qrcodeEl.innerHTML = `<img src="${qrDataUrl}" alt="QR Code" style="width: 256px; height: 256px;">`;
+
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('connected-section').classList.add('hidden');
+        });
+
+        socket.on('pairing-code', (code) => {
+            updateStatus('Enter pairing code in WhatsApp', 'waiting');
+            
+            const formattedCode = code.match(/.{1,4}/g).join(' ');
+            document.getElementById('pairingCode').textContent = formattedCode;
+            document.getElementById('pairing-code-display').classList.remove('hidden');
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = false;
+            btn.textContent = 'Generate New Code';
+        });
+
+        socket.on('pairing-code-error', (error) => {
+            updateStatus('Error generating code', 'error');
+            alert('Error: ' + error);
+            
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = false;
+            btn.textContent = 'Generate Code';
+        });
+
+        socket.on('connected', (info) => {
+            const name = info?.name || 'User';
+            const number = info?.number || 'Unknown';
+            updateStatus(`Connected as ${name}`, 'connected');
+            
+            document.getElementById('connected-name').textContent = 
+                `Connected as ${name} (${number})`;
+            
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('connected-section').classList.remove('hidden');
+        });
+
+        socket.on('logged-out', () => {
+            updateStatus('Logged out', 'error');
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('connected-section').classList.add('hidden');
+            document.getElementById('pairing-code-display').classList.add('hidden');
+        });
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            updateStatus('Disconnected from server', 'error');
+        });
+
+        function logout() {
+            if (confirm('Disconnect from WhatsApp? You will need to reconnect.')) {
+                socket.emit('logout');
+                updateStatus('Logging out...', 'waiting');
+            }
+        }
+
+        document.getElementById('phoneNumber').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                requestPairingCode();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "name": "whatsapp-bot-webjs",
+  "version": "1.0.0",
+  "description": "WhatsApp Bot with whatsapp-web.js and MongoDB session management",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "whatsapp-web.js",
+    "mongodb"
+  ],
+  "author": "MCU <marcusneiman43@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^6.21.0",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.6.1",
+    "unique-names-generator": "^4.7.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neimantech1/Thanos.git"
+  },
+  "bugs": {
+    "url": "https://github.com/neimantech1/Thanos/issues"
+  },
+  "homepage": "https://github.com/neimantech1/Thanos#readme"
+}

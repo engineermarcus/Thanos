@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: thanos-whatsapp-bot
+    env: node
+    buildCommand: npm install
+    startCommand: node app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /health
+    autoDeploy: true
+    # Important: These settings prevent premature shutdowns
+    plan: starter # or higher for better resources
