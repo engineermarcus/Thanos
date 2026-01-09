@@ -1,25 +1,28 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
+import { search } from './search.js';
 
 const execPromise = promisify(exec);
 
 // Configuration
-const config = {
-  cookiesUrl: 'https://files.catbox.moe/02cukk.txt',
-  cookiesFile: 'cookies.txt',
-  url: 'https://youtu.be/XJ6tsDkGAPM?si=lGl0QOpaJJ5aFGZs',
-  outputFile: 'sza.mp4',
-  maxRetries: 2,
-  retryDelay: 3000
-};
+async function configure(url, title) {
+  const config = {
+    cookiesUrl: 'https://files.catbox.moe/02cukk.txt',
+    cookiesFile: 'cookies.txt',
+    url: url,
+    outputFile: `${title}.mp4`,
+    maxRetries: 2,
+    retryDelay: 3000
+  };
+  return config;
+}
 
 // Download file from URL using curl/wget
 async function downloadFile(url, filepath) {
   console.log(`📥 Downloading cookies from: ${url}`);
   
   try {
-    // Try curl first
     await execPromise(`curl -L -o "${filepath}" "${url}"`);
     console.log('✅ Downloaded using curl');
     return;
@@ -27,7 +30,6 @@ async function downloadFile(url, filepath) {
     console.log('⚠️  curl failed, trying wget...');
     
     try {
-      // Fallback to wget
       await execPromise(`wget -O "${filepath}" "${url}"`);
       console.log('✅ Downloaded using wget');
       return;
@@ -58,7 +60,7 @@ async function getFileSize(filePath) {
 }
 
 // Validate cookies file
-async function validateCookies() {
+async function validateCookies(config) {
   try {
     const content = await fs.readFile(config.cookiesFile, 'utf-8');
     const lines = content.split('\n').filter(line => 
@@ -78,7 +80,7 @@ async function validateCookies() {
 }
 
 // Download video with cookies
-async function downloadVideo(attempt = 1) {
+async function downloadVideo(config, attempt = 1) {
   console.log(`\n🎬 Starting download (attempt ${attempt}/${config.maxRetries})...`);
   
   // Build command with cookies file
@@ -110,7 +112,7 @@ async function downloadVideo(attempt = 1) {
     if (attempt < config.maxRetries) {
       console.log(`⏳ Retrying in ${config.retryDelay / 1000} seconds...`);
       await new Promise(resolve => setTimeout(resolve, config.retryDelay));
-      return downloadVideo(attempt + 1);
+      return downloadVideo(config, attempt + 1);
     }
     
     throw error;
@@ -118,7 +120,7 @@ async function downloadVideo(attempt = 1) {
 }
 
 // Verify video integrity
-async function verifyVideo() {
+async function verifyVideo(config) {
   console.log('\n🔍 Verifying video...');
   
   if (!await fileExists(config.outputFile)) {
@@ -148,7 +150,6 @@ async function verifyVideo() {
       console.log('✅ Video is valid!');
       
       if (info.streams && info.streams.length > 0) {
-        // Find video stream
         const video = info.streams.find(s => s.codec_type === 'video');
         const audio = info.streams.find(s => s.codec_type === 'audio');
         
@@ -177,8 +178,12 @@ async function verifyVideo() {
 }
 
 // Main execution
-async function main() {
+export async function downloader(query) {
   const startTime = Date.now();
+  const meta = await search(query);
+  const url = meta.url;
+  const title = meta.title;
+  const config = await configure(url, title); // Added await
   
   try {
     console.log('🚀 YouTube Downloader with Remote Cookies\n');
@@ -189,7 +194,7 @@ async function main() {
       const size = await getFileSize(config.outputFile);
       console.log(`📦 Existing file size: ${size} MB`);
       
-      await verifyVideo();
+      await verifyVideo(config); // Pass config
       return;
     }
     
@@ -202,17 +207,17 @@ async function main() {
     }
     
     // Validate cookies
-    if (!await validateCookies()) {
+    if (!await validateCookies(config)) { // Pass config
       throw new Error('Invalid cookies file');
     }
     
     // Download video
-    await downloadVideo();
+    await downloadVideo(config); // Pass config and add await
     
     console.log('\n✅ Download complete!');
     
     // Verify
-    await verifyVideo();
+    await verifyVideo(config); // Pass config
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`\n🎉 All done in ${duration}s!`);
@@ -233,5 +238,3 @@ async function main() {
     process.exit(1);
   }
 }
-
-main();

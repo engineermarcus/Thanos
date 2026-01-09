@@ -10,22 +10,19 @@ const credentials = {
 
 const uploader = new TeraboxUploader(credentials);
 
-// Progress callback function
 const progressCallback = (loaded, total) => {
   const percent = ((loaded / total) * 100).toFixed(2);
-  console.log(`Upload progress: ${percent}% (${loaded}/${total} bytes)`);
+  console.log(`Upload progress: ${percent}%`);
 };
 
 try {
-  // Upload file with progress callback
-  const result = await uploader.uploadFile(
-    './sza.mp4',           // file path
-    progressCallback,      // progress callback (not a boolean!)
-    '/my-data-base'        // destination folder
-  );
+  // Upload
+  const result = await uploader.uploadFile('./sza.mp4', progressCallback, '/my-data-base');
+  console.log('✅ Upload successful!', result.fileDetails.fs_id);
   
-  console.log('Upload successful!');
-  console.log('Result:', result);
+  // Download
+  const link = await uploader.downloadFile(result.fileDetails.fs_id);
+  console.log('📥 Download link:', link);
 } catch (error) {
-  console.error('Upload failed:', error.message);
+  console.error('❌ Error:', error.message);
 }
