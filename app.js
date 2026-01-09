@@ -41,6 +41,7 @@ import {
   isBanned
 } from './controllers/group.js';
 import { getMenuText } from './menu.js';
+import youtube from './routes/ytRouter.js';
 
 const { dbName } = settings();
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +57,7 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 app.use(express.json());
+app.use('/api', youtube);
 
 const PORT = process.env.PORT || 3000;
 const logger = pino({ level: 'silent' });

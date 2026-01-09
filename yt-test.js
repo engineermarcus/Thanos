@@ -8,8 +8,8 @@ const execPromise = promisify(exec);
 const config = {
   cookiesUrl: 'https://files.catbox.moe/02cukk.txt',
   cookiesFile: 'cookies.txt',
-  url: 'https://youtube.com/shorts/qYrG2qRyJR0?si=rR2-scgF453qLbbR',
-  outputFile: 'mrbean.mp4',
+  url: 'https://youtu.be/XJ6tsDkGAPM?si=lGl0QOpaJJ5aFGZs',
+  outputFile: 'sza.mp4',
   maxRetries: 2,
   retryDelay: 3000
 };
@@ -82,7 +82,7 @@ async function downloadVideo(attempt = 1) {
   console.log(`\n🎬 Starting download (attempt ${attempt}/${config.maxRetries})...`);
   
   // Build command with cookies file
-  const command = `yt-dlp --cookies "${config.cookiesFile}" --no-part --merge-output-format mp4 --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" -o "${config.outputFile}" "${config.url}"`;
+  const command = `pip install yt-dlp && yt-dlp --cookies "${config.cookiesFile}" --no-part --merge-output-format mp4 --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" -o "${config.outputFile}" "${config.url}"`;
   
   console.log(`🔐 Using cookies from ${config.cookiesFile}`);
   

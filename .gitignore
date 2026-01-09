@@ -2,3 +2,5 @@ node_modules/
 yarn.lock/
 auth_session/
 cookies.txt
+*.mp4/
+*.mp3/
