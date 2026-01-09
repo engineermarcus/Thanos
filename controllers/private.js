@@ -21,8 +21,7 @@ function isBotJid(jid, BOT_JIDS) {
   }
   return false;
 }
-
-export async function privateChat(msg, WASocket, userMessage, senderNumber, quotedMsg, BOT_JIDS = [], skipGroupCheck = false) {
+export async function privateChat(msg, WASocket, userMessage, BOT_JIDS = [], skipGroupCheck = false) {
     const from = msg.key.remoteJid;
     const senderJid = msg.key.participant || msg.key.remoteJid;
     
@@ -37,13 +36,13 @@ export async function privateChat(msg, WASocket, userMessage, senderNumber, quot
     
     if (isPrivate) {
         console.log('💬 Private chat - responding');
-        await sendThanosMessage(WASocket, userMessage, senderNumber, msg, msg);
+        await sendThanosMessage(WASocket, userMessage, from, msg, msg);
         return;
     }
     
     if (skipGroupCheck) {
         console.log('💬 Group chat - already validated - responding');
-        await sendThanosMessage(WASocket, userMessage, senderNumber, msg, msg);
+        await sendThanosMessage(WASocket, userMessage, from, msg, msg);
         return;
     }
     
@@ -64,7 +63,7 @@ export async function privateChat(msg, WASocket, userMessage, senderNumber, quot
     
     if (isReplyToBot) {
         console.log('💬 Group chat - replying');
-        await sendThanosMessage(WASocket, userMessage, senderNumber, msg, msg);
+        await sendThanosMessage(WASocket, userMessage, from, msg, msg);
     } else {
         console.log('⏭️ Group message not replying to bot - ignoring');
     }

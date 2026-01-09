@@ -7,12 +7,14 @@ import { uploadToCatbox } from './store.js';
 const execPromise = promisify(exec);
 
 // Configuration
-async function configure(url, title) {
+async function configure(url, title, mediaType) {
+  const extension = mediaType === 'mp3' ? 'mp3' : 'mp4';
   const config = {
     cookiesUrl: 'https://files.catbox.moe/02cukk.txt',
     cookiesFile: 'cookies.txt',
     url: url,
-    outputFile: `Downloads/${title}.mp4`,
+    outputFile: `Downloads/${title}.${extension}`,
+    mediaType: mediaType,
     maxRetries: 2,
     retryDelay: 3000
   };
@@ -84,7 +86,14 @@ async function validateCookies(config) {
 async function downloadVideo(config, attempt = 1) {
   console.log(`\n🎬 Starting download (attempt ${attempt}/${config.maxRetries})...`);
   
-  const command = `pip install yt-dlp && yt-dlp --cookies "${config.cookiesFile}" --no-part --merge-output-format mp4 --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" -o "${config.outputFile}" "${config.url}"`;
+  let command;
+  if (config.mediaType === 'mp3') {
+    // Audio only - extract and convert to mp3
+    command = `pip install yt-dlp && yt-dlp --cookies "${config.cookiesFile}" --extract-audio --audio-format mp3 -o "${config.outputFile}" "${config.url}"`;
+  } else {
+    // Video - use your original working command
+    command = `pip install yt-dlp && yt-dlp --cookies "${config.cookiesFile}" --no-part --merge-output-format mp4 --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" -o "${config.outputFile}" "${config.url}"`;
+  }
   
   console.log(`🔐 Using cookies from ${config.cookiesFile}`);
   
@@ -120,12 +129,17 @@ async function downloadVideo(config, attempt = 1) {
 }
 
 // Main execution
-export async function downloader(query, uploadToCloud = true, deleteAfterUpload = true) {
+export async function downloader(query, mediaType = 'mp4', uploadToCloud = true, deleteAfterUpload = true) {
+  // Validate mediaType parameter
+  if (mediaType !== 'mp3' && mediaType !== 'mp4') {
+    throw new Error('Invalid mediaType. Must be either "mp3" or "mp4"');
+  }
+  
   const startTime = Date.now();
   const meta = await search(query);
   const url = meta.url;
   const title = meta.title;
-  const config = await configure(url, title);
+  const config = await configure(url, title, mediaType);
   
   try {
     console.log('🚀 YouTube Downloader with Catbox Integration\n');
@@ -161,6 +175,7 @@ export async function downloader(query, uploadToCloud = true, deleteAfterUpload 
         console.log('\n📋 Catbox Upload Results:');
         console.log(`   Download URL: ${uploadResult.url}`);
         console.log('   ✅ Permanent link - never expires!');
+        return uploadResult.url;
       }
     }
     

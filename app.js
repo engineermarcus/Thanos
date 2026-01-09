@@ -42,6 +42,7 @@ import {
 } from './controllers/group.js';
 import { getMenuText } from './menu.js';
 import youtube from './routes/ytRouter.js';
+import { message } from './sendMessages.js';
 
 const { dbName } = settings();
 const __filename = fileURLToPath(import.meta.url);
@@ -197,14 +198,14 @@ async function loadAuthFromMongo() {
   }
 }
 
-async function startWhatsAppBot(usePairingCode = false, phoneNumber = null) {
+export async function startWhatsAppBot(usePairingCode = false, phoneNumber = null) {
   try {
     await loadAuthFromMongo();
     
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     const { version } = await fetchLatestBaileysVersion();
 
-    sock = makeWASocket({
+    const sock = makeWASocket({
       version,
       logger,
       printQRInTerminal: false,
@@ -215,6 +216,8 @@ async function startWhatsAppBot(usePairingCode = false, phoneNumber = null) {
       syncFullHistory: false,
       shouldIgnoreJid: () => false
     });
+
+     
 
     if (usePairingCode && phoneNumber && !sock.authState.creds.registered) {
       console.log('📱 Requesting pairing code for:', phoneNumber);
@@ -277,6 +280,7 @@ async function startWhatsAppBot(usePairingCode = false, phoneNumber = null) {
             await sock.sendMessage(myJid, { 
               text: '✅ THANOS MD BOT ONLINE\n\n⚡ The Mad Titan Awakens\n🫰 Ready to snap commands into action!\n\n💬 GROUP MODE: Human-like chat\n✅ Responds to replies\n✅ Remembers context\n✅ Natural conversations'
             });
+           
           } catch (msgError) {
             console.log('⚠️ Could not send welcome message');
           }
@@ -332,6 +336,7 @@ async function startWhatsAppBot(usePairingCode = false, phoneNumber = null) {
           sender: extractNumber(senderJid),
           content: messageData.messageContent.substring(0, 50)
         });
+        
         
         const senderNumber = extractNumber(senderJid);
         const isOwner = msg.key.fromMe;
@@ -446,6 +451,13 @@ async function startWhatsAppBot(usePairingCode = false, phoneNumber = null) {
             continue;
           }
         }
+        const lowerMsg = messageData.messageContent.toLowerCase();
+if (lowerMsg.startsWith("song") || lowerMsg.startsWith("play") || lowerMsg.startsWith("video")) {
+  const senderJid = msg.key.participant || msg.key.remoteJid;
+  const isFromMe = msg.key.fromMe; // Pass this
+  await message(sock, messageData.messageContent, messageData.replyTo, msg, ACTUAL_BOT_NUMBER, senderJid, isFromMe);
+  continue;
+}
 
         if (messageData.chatType === 'GROUP') {
           const contextInfo = msg.message?.extendedTextMessage?.contextInfo || {};
@@ -456,7 +468,7 @@ async function startWhatsAppBot(usePairingCode = false, phoneNumber = null) {
             console.log('🏓 Ping command detected in group - responding');
             const sentMessage = await sendText(sock, 'ping', messageData.replyTo, msg);
             if (sentMessage) {
-              await animatePong(sock, messageData.replyTo, sentMessage);
+             // await animatePong(sock, messageData.replyTo, sentMessage);
             }
             continue;
           }
@@ -489,12 +501,16 @@ async function startWhatsAppBot(usePairingCode = false, phoneNumber = null) {
           console.log('🔄 Sending to AI');
           await privateChat(msg, sock, messageData.messageContent, messageData.replyTo, msg, [], true);
         }
+        
       }
     });
+    
+
   } catch (error) {
     console.error('❌ Error in startWhatsAppBot:', error);
     setTimeout(() => startWhatsAppBot(), 10000);
   }
+
 }
 
 function extractMessageInfo(msg) {

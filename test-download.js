@@ -3,7 +3,7 @@ import { downloader } from './utils/permanent-download.js';
 
 async function test(){
 
-await downloader('SZA snooze lyrics');
+await downloader('SZA snooze lyrics', 'mp3');
 }
 
 await test();

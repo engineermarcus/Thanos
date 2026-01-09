@@ -1,5 +1,6 @@
 import { sendMessageToThanos } from './Thanos/thanos.js';
 import { getHistory, addMessage } from './history.js';
+import { downloader } from './utils/permanent-download.js';
 
 let botStartTime = Date.now();
 let botMessageTracker = null;
@@ -63,11 +64,11 @@ async function getContextInfo(chatId, senderJid) {
 }
 
 export async function sendText(WASocket, msg, senderNumber, quotedMsg){
-    const message = msg.toLowerCase() === 'ping' ? 'pong 🏓' : null;
+    const message = msg.toLowerCase() === 'ping'? 'pong 🏓': null;
     
     if (message) {
         const sentMsg = await WASocket.sendMessage(senderNumber, { 
-            text: message 
+            text: message
         }, {
             quoted: quotedMsg
         });
