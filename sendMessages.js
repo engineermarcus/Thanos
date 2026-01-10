@@ -37,7 +37,7 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
         
         try {
             const mediaUrl = await downloader(query, 'mp3');
-            const { thumbnail,title } = await search(query);
+            const { thumbnail } = await search(query);
             
             await WASocket.sendMessage(chatJid, {
                 audio: { url: mediaUrl },
@@ -89,6 +89,8 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
         
         try {
             const mediaUrl = await downloader(query, 'mp4');
+            const { title } = await search(query);
+            
             
             const caption = isMaster
                 ? `🫰 Sire is now playing: ${title}`
