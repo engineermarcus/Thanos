@@ -5,7 +5,7 @@
 //_________________________________________________________________
 //_____________SELECT YOUR DATABASE NAME____________________________
 
-const dbName = process.env.DB_NAME || "marvel-cinematic-universe"; // my-data-base or your-name
+const dbName = process.env.DB_NAME || "thanos"; // my-data-base or your-name
 
 //______________________________________________________________________
 //_________________INTELLIGENCE CORE____________________________________
