@@ -89,10 +89,10 @@ async function downloadVideo(config, attempt = 1) {
   let command;
   if (config.mediaType === 'mp3') {
     // Audio only - extract and convert to mp3
-    command = `pip install yt-dlp && yt-dlp --cookies "${config.cookiesFile}" --extract-audio --audio-format mp3 -o "${config.outputFile}" "${config.url}"`;
+    command = `yt-dlp --cookies "${config.cookiesFile}" --extract-audio --audio-format mp3 -o "${config.outputFile}" "${config.url}"`;
   } else {
     // Video - use your original working command
-    command = `pip install yt-dlp && yt-dlp --cookies "${config.cookiesFile}" --no-part --merge-output-format mp4 --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" -o "${config.outputFile}" "${config.url}"`;
+    command = `yt-dlp --cookies "${config.cookiesFile}" --no-part --merge-output-format mp4 --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" -o "${config.outputFile}" "${config.url}"`;
   }
   
   console.log(`🔐 Using cookies from ${config.cookiesFile}`);
