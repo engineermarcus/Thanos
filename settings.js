@@ -39,5 +39,5 @@ export function setGroupControlStatus(status) {
 }
 
 export function settings() {
-    return { dbName, GROQ_API_KEY };
+    return { dbName };
 }
