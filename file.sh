@@ -1,1 +1,1 @@
-ls
+curl https://afrimergeai.com
