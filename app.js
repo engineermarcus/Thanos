@@ -461,13 +461,18 @@ export async function startWhatsAppBot(usePairingCode = false, phoneNumber = nul
           continue;
         }
         
-        // Then check for commands
-        if (lowerMsg.startsWith("song") || lowerMsg.startsWith("play") || lowerMsg.startsWith("video")) {
-          const senderJid = msg.key.participant || msg.key.remoteJid;
-          const isFromMe = msg.key.fromMe;
-          await message(sock, messageData.messageContent, messageData.replyTo, msg, ACTUAL_BOT_NUMBER, senderJid, isFromMe, msg);
-          continue;
-        }
+       // Define the regex for supported code triggers
+       const codeRegex = /^(py|python|python3|js|node|javascript|java|kt|kotlin|cpp|c\+\+|c|go|golang|rs|rust|ts|typescript|php|rb|ruby|lua|sh|bash|asm|assembly|perl|pl|dart|swift|sql)\b/i;
+       
+      // Check if the message starts with a language trigger
+      if (codeRegex.test(lowerMsg)) {
+        const senderJid = msg.key.participant || msg.key.remoteJid;
+        const isFromMe = msg.key.fromMe;
+    
+        // Pass to your updated message handler
+        await message(sock, messageData.messageContent, messageData.replyTo, msg, ACTUAL_BOT_NUMBER, senderJid, isFromMe, msg);
+         continue;
+     }
 
         if (messageData.chatType === 'GROUP') {
           const contextInfo = msg.message?.extendedTextMessage?.contextInfo || {};

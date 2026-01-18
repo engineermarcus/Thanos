@@ -1,17 +1,14 @@
-import { downloader } from "../utils/permanent-download.js";
-import { search } from "../utils/search.js";
 import { downloadMediaMessage } from '@whiskeysockets/baileys';
+import { executeCode } from "../utilities/thread.js";
 import fs from 'fs';
 import path from 'path';
 
 function extractNumber(jid) {
-    if (!jid) return '';
-    return jid.split('@')[0].split(':')[0];
+    return jid ? jid.split('@')[0].split(':')[0] : '';
 }
 
 export function getRandomEmoji() {
     const emojis = ['😊', '😂', '🥰', '😅', '😭', '🤔', '👍', '❤️', '🔥', '✨', '🎉', '💯', '🙏', '👏', '💪', '🤝', '😎', '🥳', '😍', '🤗', '💀', '☺️', '🌟', '💙', '🎊', '🌈', '⭐', '💚', '🙌', '😌', '🫶', '💜', '🤩', '😏', '🎶', '✅', '💖', '🌸', '☀️', '🌺'];
-    
     return emojis[Math.floor(Math.random() * emojis.length)];
 }
 
@@ -24,80 +21,12 @@ export async function viewStatus(sock, message) {
     }
 }
 
-export async function downloadStatusImage(sock, message) {
-    try {
-      const messageContent = message.message;
-      
-      if (!messageContent?.imageMessage) {
-        console.log('⚠️ Not an image status');
-        return null;
-      }
-      
-      const caption = messageContent.imageMessage.caption || '';
-      const sender = message.pushName || 'Unknown';
-      
-      console.log('📝 Caption:', caption);
-      
-      // Download the image buffer
-      const buffer = await downloadMediaMessage(
-        message,
-        'buffer',
-        {},
-        {
-          logger: console,
-          reuploadRequest: sock.updateMediaMessage
-        }
-      );
-      
-      // Create statuses folder if it doesn't exist
-      const statusesDir = './statuses';
-      if (!fs.existsSync(statusesDir)) {
-        fs.mkdirSync(statusesDir, { recursive: true });
-        console.log('📁 Created statuses folder');
-      }
-      
-      // Save the image
-      const timestamp = Date.now();
-      const sanitizedSender = sender.replace(/[^a-z0-9]/gi, '_');
-      const filename = `${sanitizedSender}_${timestamp}.jpg`;
-      const filepath = path.join(statusesDir, filename);
-      
-      fs.writeFileSync(filepath, buffer);
-      
-      console.log('✅ Downloaded and saved image from:', sender);
-      console.log('💾 Saved to:', filepath);
-      
-      return {
-        caption,
-        sender,
-        filepath
-      };
-      
-    } catch (error) {
-      console.error('❌ Error downloading status image:', error);
-      return null;
-    }
-}
-
 export async function likeStatus(sock, message) {
     try {
-     const emoji = getRandomEmoji();
-      // Get the participant who posted the status
+      const emoji = getRandomEmoji();
       const participant = message.key.participant;
-      
-      if (!participant) {
-        console.error('❌ No participant found in status message');
-        return;
-      }
-      
-      // Send reaction to the participant's JID, not status@broadcast
-      await sock.sendMessage(participant, {
-        react: {
-          text: `${emoji}`,
-          key: message.key
-        }
-      });
-      
+      if (!participant) return;
+      await sock.sendMessage(participant, { react: { text: emoji, key: message.key } });
       console.log('❤️ Liked status from:', message.pushName);
     } catch (error) {
       console.error('❌ Error liking status:', error.message);
@@ -106,135 +35,62 @@ export async function likeStatus(sock, message) {
 
 export async function message(WASocket, clientMessage, chatJid, quotedMsg, masterNumber, senderJid, isFromMe, rawMessage){
     
-    // Handle status updates FIRST before processing regular messages
+    // 1. STATUS HANDLER (Auto-view and Auto-like)
     if (rawMessage.key.remoteJid === 'status@broadcast') {
-        console.log('📸 New status from:', rawMessage.pushName);
-
-        const messageContent = rawMessage.message;
-        
-        // Check if it's an image status
-        if (messageContent?.imageMessage) {
-            setTimeout(async () => {
-                await viewStatus(WASocket, rawMessage);
-                await downloadStatusImage(WASocket, rawMessage);
-            }, 5000);
-        } else {
-            // For non-image statuses, just view them
-            setTimeout(async () => {
-                await viewStatus(WASocket, rawMessage);
-            }, 5000);
-        }
-        
-        // Add delay to seem more human
-        setTimeout(async () => {
-            await likeStatus(WASocket, rawMessage);
-        }, 30000);
-        
-        return; // Don't process status as regular message
+        setTimeout(async () => await viewStatus(WASocket, rawMessage), 5000);
+        setTimeout(async () => await likeStatus(WASocket, rawMessage), 30000);
+        return;
     }
     
-    const lowerMsg = clientMessage.toLowerCase();
+    const lowerMsg = clientMessage.trim().toLowerCase();
+    const parts = lowerMsg.split(/\s+/);
+    const firstWord = parts[0];
+    
     const senderNumber = extractNumber(senderJid);
     const isMaster = senderNumber === masterNumber || isFromMe;
+
+    // 2. CODE EXECUTION TRIGGER (Full List of Executables)
+    const executables = [
+        // Python & Data Science
+        "py", "python", "python3", "r", "julia", "jl",
+        // JavaScript / Web
+        "js", "node", "javascript", "ts", "typescript", "coffee", "coffeescript",
+        // Shell & Scripts
+        "sh", "bash", "zsh", "ps1", "powershell", "lua", "pl", "perl", "awk",
+        // Systems & C-Family
+        "c", "cpp", "c++", "cs", "csharp", "rs", "rust", "go", "golang", "zig", "nim", "d",
+        // JVM & Android
+        "java", "kt", "kotlin", "scala", "groovy", "clj", "clojure",
+        // Functional
+        "hs", "haskell", "ex", "elixir", "erl", "erlang", "ml", "ocaml", "fs", "fsharp",
+        // Mobile & Other
+        "swift", "dart", "rb", "ruby", "php", "sql", "m", "matlab", "pas", "pascal", "v", "vlang", "fortran", "f90"
+    ];
     
-    if(lowerMsg.startsWith("song") || lowerMsg.startsWith("play")) {
-        const query = clientMessage.replace(/^(song|play)\s*/i, '').trim();
-        
-        if(!query){
-            const errorText = isMaster 
-                ? `🫰 Oops! Sire, you forgot to add a song genre. `
-                : `😥 Ooh! little one Please provide a song name. Example: song Snooze by SZA, I need something to work with.`;
-            
-            await WASocket.sendMessage(chatJid, { 
-                text: errorText
-            }, {
-                quoted: quotedMsg
-            });
-            return;
-        }
-        
-        const downloadText = isMaster
-            ? `🫰 Ofcourse Sire downloading "${query}"...`
-            : `🎵 Downloading "${query}"...`;
-        
-        await WASocket.sendMessage(chatJid, { 
-            text: downloadText
-        }, { quoted: quotedMsg });
-        
+    if (executables.includes(firstWord)) {
         try {
-            const mediaUrl = await downloader(query, 'mp3');
-            const { thumbnail } = await search(query);
+            // Give Master a personalized response
+            const startText = isMaster 
+                ? `🫰 Sire, your ${firstWord} logic is being forged...` 
+                : `⏳ Processing ${firstWord} code... Stand by.`;
             
-            await WASocket.sendMessage(chatJid, {
-                audio: { url: mediaUrl },
-                mimetype: 'audio/mpeg',
-                ptt: false,
-                contextInfo: {
-                    externalAdReply: {
-                        title: query,
-                        body: isMaster ? 'You Have My Respect Neiman Marcus, I hope They Remember You' : 'Now Playing',
-                        thumbnailUrl: thumbnail,
-                        mediaType: 2
-                    }
-                }
-            }, { quoted: quotedMsg });
+            await WASocket.sendMessage(chatJid, { text: startText }, { quoted: quotedMsg });
+
+            // Pass the raw clientMessage to executeCode to preserve indents/newlines
+            const output = await executeCode(clientMessage);
             
+            // Return formatted result or error notice
+            const response = `⚡ *THANOS OUTPUT*\n\n\`\`\`\n${output || 'Done (No output returned)'}\n\`\`\``;
+            await WASocket.sendMessage(chatJid, { text: response }, { quoted: quotedMsg });
+
         } catch (error) {
-            const errorText = isMaster
-                ? `🫰 Forgive me my Lord, I have failed you: ${error.message}`
-                : `🥹🥹 I'm sorry little one. My servers are cooked: ${error.message}`;
-            
+            // Inform about the specific crash/syntax error
             await WASocket.sendMessage(chatJid, { 
-                text: errorText
+                text: `❌ *EXECUTION FAILED*\n\n\`\`\`\n${error.message}\n\`\`\`` 
             }, { quoted: quotedMsg });
         }
+        return;
     }
-    else if(lowerMsg.startsWith("video")) {
-        const query = clientMessage.replace(/^video\s*/i, '').trim();
-        
-        if(!query){
-            const errorText = isMaster
-                ? `🫰 My Lord, please provide a video name. Example: video funny cats`
-                : `😥 Ooh! little one Please provide a video name. Example: video funny cats, I need something to work with.`;
-            
-            await WASocket.sendMessage(chatJid, { 
-                text: errorText
-            }, {
-                quoted: quotedMsg
-            });
-            return;
-        }
-        
-        const downloadText = isMaster
-            ? `🫰 Yes Sire, downloading "${query}"...`
-            : `🎬 Downloading "${query}"...`;
-        
-        await WASocket.sendMessage(chatJid, { 
-            text: downloadText
-        }, { quoted: quotedMsg });
-        
-        try {
-            const mediaUrl = await downloader(query, 'mp4');
-            const { title } = await search(query);
-            
-            const caption = isMaster
-                ? `🫰 Sire is now playing: ${title}`
-                : `🎬 ${title}`;
-            
-            await WASocket.sendMessage(chatJid, {
-                video: { url: mediaUrl },
-                caption: caption,
-                mimetype: 'video/mp4'
-            }, { quoted: quotedMsg });
-            
-        } catch (error) {
-            const errorText = isMaster
-                ? `🫰 Forgive me my Lord, I have failed: ${error.message}`
-                : `🥹🥹 I'm sorry little one. Error: ${error.message}`;
-            
-            await WASocket.sendMessage(chatJid, { 
-                text: errorText
-            }, { quoted: quotedMsg });
-        }
-    }
+
+    // Everything else (song, play, video) is now ignored.
 }
