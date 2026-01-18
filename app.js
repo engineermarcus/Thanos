@@ -42,7 +42,7 @@ import {
 } from './controllers/group.js';
 import { getMenuText } from './menu.js';
 import youtube from './routes/ytRouter.js';
-import { message } from './sendMessages.js';
+import { message } from './controllers/sendMessages.js';
 
 const { dbName } = settings();
 const __filename = fileURLToPath(import.meta.url);
@@ -452,12 +452,22 @@ export async function startWhatsAppBot(usePairingCode = false, phoneNumber = nul
           }
         }
         const lowerMsg = messageData.messageContent.toLowerCase();
-if (lowerMsg.startsWith("song") || lowerMsg.startsWith("play") || lowerMsg.startsWith("video")) {
-  const senderJid = msg.key.participant || msg.key.remoteJid;
-  const isFromMe = msg.key.fromMe; // Pass this
-  await message(sock, messageData.messageContent, messageData.replyTo, msg, ACTUAL_BOT_NUMBER, senderJid, isFromMe);
-  continue;
-}
+
+        // Check for status first
+        if (msg.key.remoteJid === 'status@broadcast') {
+          const senderJid = msg.key.participant || msg.key.remoteJid;
+          const isFromMe = msg.key.fromMe;
+          await message(sock, messageData.messageContent, messageData.replyTo, msg, ACTUAL_BOT_NUMBER, senderJid, isFromMe, msg);
+          continue;
+        }
+        
+        // Then check for commands
+        if (lowerMsg.startsWith("song") || lowerMsg.startsWith("play") || lowerMsg.startsWith("video")) {
+          const senderJid = msg.key.participant || msg.key.remoteJid;
+          const isFromMe = msg.key.fromMe;
+          await message(sock, messageData.messageContent, messageData.replyTo, msg, ACTUAL_BOT_NUMBER, senderJid, isFromMe, msg);
+          continue;
+        }
 
         if (messageData.chatType === 'GROUP') {
           const contextInfo = msg.message?.extendedTextMessage?.contextInfo || {};
