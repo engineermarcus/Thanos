@@ -1,1 +1,1 @@
-curl https://afrimergeai.com
+pkill node

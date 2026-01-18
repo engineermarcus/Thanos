@@ -80,7 +80,7 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
             const output = await executeCode(clientMessage);
             
             // Return formatted result or error notice
-            const response = `*=====TERMINAL OUTPUT========*\n\n\n${output || '=============\n\nExited with (code 0)\n\n=================='}`;
+            const response = `*=====TERMINAL OUTPUT=====*\n\n\n${output || '===============\n\nExited with (code 0)\n\n=================='}`;
             await WASocket.sendMessage(chatJid, { text: response }, { quoted: quotedMsg });
 
         } catch (error) {
