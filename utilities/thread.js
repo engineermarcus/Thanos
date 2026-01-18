@@ -4,7 +4,9 @@ import { spawn } from "child_process";
  * 1. LOW-LEVEL EXECUTION
  */
 export async function execute(command) {
-    if(command.includes("rm")) { return; }
+    if(command.includes("rm")) { 
+        return; 
+    }
     return new Promise((resolve, reject) => {
         const child = spawn(command, [], { shell: true });
         let fullOutput = "";

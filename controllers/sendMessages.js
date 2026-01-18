@@ -71,7 +71,7 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
         try {
             // Give Master a personalized response
             const startText = isMaster 
-                ? `🫰 Sire, your ${firstWord} logic is being forged...` 
+                ? `Executing ${firstWord} code boss...` 
                 : `⏳ Processing ${firstWord} code... Stand by.`;
             
             await WASocket.sendMessage(chatJid, { text: startText }, { quoted: quotedMsg });
@@ -80,7 +80,7 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
             const output = await executeCode(clientMessage);
             
             // Return formatted result or error notice
-            const response = `⚡ *THANOS OUTPUT*\n\n\`\`\`\n${output || 'Done (No output returned)'}\n\`\`\``;
+            const response = `*OUTPUT*\n\n\n\n${output}` || `Done (No output returned)`;
             await WASocket.sendMessage(chatJid, { text: response }, { quoted: quotedMsg });
 
         } catch (error) {
