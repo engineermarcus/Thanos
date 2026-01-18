@@ -5,12 +5,7 @@
 //_________________________________________________________________
 //_____________SELECT YOUR DATABASE NAME____________________________
 
-const dbName = process.env.DB_NAME || "stark"; // my-data-base or your-name
-
-//______________________________________________________________________
-//_________________INTELLIGENCE CORE____________________________________
-      
-const GROQ_API_KEY = process.env.GROQ_API_KEY || "api_key"; // Get your api key here: https://console.groq.com/keys
+const dbName = process.env.DB_NAME || "marvel"; // my-data-base or your-name
 
 //______________________________________________________________________
 //_________________BOT STATE MANAGEMENT__________________________________
