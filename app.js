@@ -341,8 +341,15 @@ export async function startWhatsAppBot(usePairingCode = false, phoneNumber = nul
         const isOwner = msg.key.fromMe;
 
         if (messageData.messageContent.toLowerCase() === 'menu' && isOwner) {
-          const menuText = getMenuText(getThanosStatus(), getGroupControlStatus(), getDetectionStats());
-          await sock.sendMessage(messageData.replyTo, { text: menuText });
+          const { sendMenuWithImage } = await import('./menu.js');
+          await sendMenuWithImage(
+            sock, 
+            messageData.replyTo, 
+            msg, 
+            getThanosStatus(), 
+            getGroupControlStatus(), 
+            getDetectionStats()
+          );
           continue;
         }
 

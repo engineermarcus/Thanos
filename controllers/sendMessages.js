@@ -253,9 +253,88 @@ async function handleStickerCommand(WASocket, rawMessage, chatJid, quotedMsg) {
     }
 }
 
+export function extractMessageInfo(msg) {
+    // Safety check
+    if (!msg || !msg.key || !msg.key.remoteJid) {
+        console.error('❌ extractMessageInfo: Invalid message object');
+        return {
+            chatType: 'UNKNOWN',
+            from: null,
+            replyTo: null,
+            sender: null,
+            senderName: 'Unknown',
+            messageContent: '',
+            timestamp: new Date()
+        };
+    }
+
+    const from = msg.key.remoteJid;
+    const sender = msg.key.participant || msg.key.remoteJid;
+    const senderName = msg.pushName || msg.verifiedBizName || 'Unknown';
+    
+    let chatType = 'PRIVATE';
+    if (from?.endsWith('@g.us')) chatType = 'GROUP';
+    else if (from?.endsWith('@newsletter')) chatType = 'CHANNEL';
+    else if (from === 'status@broadcast') chatType = 'STATUS';
+
+    let replyTo;
+    if (chatType === 'GROUP') {
+        replyTo = from;
+    } else {
+        replyTo = from;
+        if (replyTo && !replyTo.includes('@')) {
+            replyTo = replyTo + '@s.whatsapp.net';
+        }
+    }
+
+    let messageContent = '';
+    const messageType = msg.message ? Object.keys(msg.message)[0] : null;
+    
+    if (messageType) {
+        switch (messageType) {
+            case 'conversation':
+                messageContent = msg.message.conversation;
+                break;
+            case 'extendedTextMessage':
+                messageContent = msg.message.extendedTextMessage?.text || '';
+                break;
+            case 'imageMessage':
+                messageContent = '[Image]' + (msg.message.imageMessage?.caption ? ` - ${msg.message.imageMessage.caption}` : '');
+                break;
+            case 'videoMessage':
+                messageContent = '[Video]' + (msg.message.videoMessage?.caption ? ` - ${msg.message.videoMessage.caption}` : '');
+                break;
+            case 'audioMessage':
+                messageContent = msg.message.audioMessage?.ptt ? '[Voice Note]' : '[Audio]';
+                break;
+            case 'documentMessage':
+                messageContent = `[Document: ${msg.message.documentMessage?.fileName || 'file'}]`;
+                break;
+            case 'stickerMessage':
+                messageContent = '[Sticker]';
+                break;
+            default:
+                messageContent = '[Unknown message type]';
+        }
+    }
+
+    // ✅ Return FULL object with all properties
+    return { 
+        chatType, 
+        from, 
+        replyTo,
+        sender, 
+        senderName,  // ← Name is here in the object
+        messageContent, 
+        timestamp: new Date(msg.messageTimestamp * 1000) 
+    };
+}
+
+
 // ============================================
 // MAIN MESSAGE HANDLER
 // ============================================
+
 
 export async function message(WASocket, clientMessage, chatJid, quotedMsg, masterNumber, senderJid, isFromMe, rawMessage) {
 
@@ -296,11 +375,11 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
 
     if (executables.includes(firstWord)) {
         try {
-            const startText = isMaster ? `🫰 Sire, reality is being rewritten...` : `⏳ Processing...`;
-            await WASocket.sendMessage(chatJid, { text: startText }, { quoted: quotedMsg });
+            const startText = isMaster ? `Sire, reality is being rewritten...` : `⏳ Processing...`;
+           // await WASocket.sendMessage(chatJid, { text: startText }, { quoted: quotedMsg });
 
-            const output = await executeCode(clientMessage);
-            const response = `======TERMINAL OUTPUT=======*\n\n${output || 'Done (No output)'}\n==============`;
+            const output = await executeCode(clientMessage,rawMessage);
+            const response = `*======TERMINAL OUTPUT=======*\n\n${output || 'Done (No output)'}\n==============`;
             await WASocket.sendMessage(chatJid, { text: response }, { quoted: quotedMsg });
         } catch (error) {
             await WASocket.sendMessage(chatJid, { 

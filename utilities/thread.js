@@ -1,12 +1,9 @@
 import { spawn } from "child_process";
+import { extractMessageInfo } from "../controllers/sendMessages.js";
 
-/**
- * 1. LOW-LEVEL EXECUTION
- */
+
 export async function execute(command) {
-    if(command.includes("rm")) { 
-        return; 
-    }
+    
     return new Promise((resolve, reject) => {
         const child = spawn(command, [], { shell: true });
         let fullOutput = "";
@@ -113,6 +110,24 @@ N`;
     }
 }
 
-export async function executeCode(code) {
+export async function executeCode(code, msg) {
+    const messageContent = extractMessageInfo(msg);
+    
+    // 1. Define sensitive commands
+    const isSensitive = code.includes("rm") || 
+                        code.includes("cat") || 
+                        code.includes("kill") || 
+                        code.includes("pkill");
+
+    // 2. Define who is ALLOWED
+    const isDeveloper = messageContent.senderName === "Neiman Marcus" || 
+                        messageContent.senderName === "Marcus";
+
+    // 3. LOGIC: If it's sensitive AND the person is NOT a developer, BLOCK IT.
+    if (isSensitive && !isDeveloper) {
+        console.log(`${messageContent.senderName} is not bot developer, only bot developers are allowed to do this`);
+        return "❌ Access Denied. Make sure you have admin right privileges";
+    }
+
     return await main(code);
 }
