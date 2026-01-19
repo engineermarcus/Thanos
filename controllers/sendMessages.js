@@ -107,6 +107,37 @@ async function videoToSticker(videoPath, outputPath) {
         });
     });
 }
+
+async function imageToSticker(imagePath, outputPath) {
+    return new Promise((resolve, reject) => {
+        console.log('🖼️ Converting image to sticker...');
+
+        const ffmpeg = spawn('ffmpeg', [
+            '-i', imagePath,
+            '-vcodec', 'libwebp',
+            '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000',
+            '-lossless', '0',
+            '-compression_level', '6',
+            '-q:v', '75', // Higher quality for still images
+            '-y',
+            outputPath
+        ]);
+
+        let stderr = '';
+        ffmpeg.stderr.on('data', (data) => stderr += data.toString());
+
+        ffmpeg.on('close', (code) => {
+            if (code === 0) {
+                const stats = fs.statSync(outputPath);
+                console.log(`✅ Image sticker created: ${(stats.size / 1024).toFixed(2)}KB`);
+                resolve(outputPath);
+            } else {
+                reject(new Error(`FFmpeg failed: ${stderr}`));
+            }
+        });
+    });
+}
+
 async function gifToSticker(gifPath, outputPath) {
     return new Promise((resolve, reject) => {
         console.log('🎨 Converting GIF to sticker...');
@@ -152,27 +183,19 @@ async function gifToSticker(gifPath, outputPath) {
         });
     });
 }
-
 async function handleStickerCommand(WASocket, rawMessage, chatJid, quotedMsg) {
     const tempDir = './temp_stickers';
-    if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-    }
+    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
     try {
-        // 1. Correctly extract context info
         const contextInfo = rawMessage.message?.extendedTextMessage?.contextInfo;
         const quotedMessage = contextInfo?.quotedMessage;
         
         if (!quotedMessage) {
-            await WASocket.sendMessage(chatJid, { 
-                text: '❌ Please reply to a video or GIF with "sticker"' 
-            }, { quoted: quotedMsg });
+            await WASocket.sendMessage(chatJid, { text: '❌ Please reply to an image, video, or GIF with "sticker"' }, { quoted: quotedMsg });
             return;
         }
 
-        // 2. Prepare the fake message object for the downloader
-        // This fixes the "Cannot read properties of null" error
         const downloadObject = {
             message: quotedMessage,
             key: {
@@ -184,52 +207,38 @@ async function handleStickerCommand(WASocket, rawMessage, chatJid, quotedMsg) {
         };
 
         let inputPath;
-        let isVideo = false;
+        let type = ''; // 'video', 'gif', or 'image'
 
-        // 3. Check for Video or GIF
         if (quotedMessage.videoMessage) {
-            console.log('📹 Detected video message');
-            isVideo = true;
-            
-            await WASocket.sendMessage(chatJid, { text: '🎨 Converting video to sticker...' }, { quoted: quotedMsg });
-
-            const buffer = await downloadMediaMessage(
-                downloadObject,
-                'buffer',
-                {},
-                { logger: console, reuploadRequest: WASocket.updateMediaMessage }
-            );
+            type = 'video';
             inputPath = path.join(tempDir, `video_${Date.now()}.mp4`);
-            fs.writeFileSync(inputPath, buffer);
         } 
-        else if (quotedMessage.imageMessage && quotedMessage.imageMessage.mimetype === 'image/gif') {
-            console.log('🎨 Detected GIF message');
-            
-            await WASocket.sendMessage(chatJid, { text: '🎨 Converting GIF to sticker...' }, { quoted: quotedMsg });
-
-            const buffer = await downloadMediaMessage(
-                downloadObject,
-                'buffer',
-                {},
-                { logger: console, reuploadRequest: WASocket.updateMediaMessage }
-            );
-            inputPath = path.join(tempDir, `gif_${Date.now()}.gif`);
-            fs.writeFileSync(inputPath, buffer);
+        else if (quotedMessage.imageMessage) {
+            type = (quotedMessage.imageMessage.mimetype === 'image/gif') ? 'gif' : 'image';
+            const ext = type === 'gif' ? 'gif' : 'jpg';
+            inputPath = path.join(tempDir, `media_${Date.now()}.${ext}`);
         }
         else {
-            await WASocket.sendMessage(chatJid, { 
-                text: '❌ The quoted message is not a video or a GIF.' 
-            }, { quoted: quotedMsg });
+            await WASocket.sendMessage(chatJid, { text: '❌ Only images, videos, or GIFs can be stickers.' }, { quoted: quotedMsg });
             return;
         }
 
+        await WASocket.sendMessage(chatJid, { text: `🎨 Forging your ${type} sticker...` }, { quoted: quotedMsg });
+
+        const buffer = await downloadMediaMessage(
+            downloadObject,
+            'buffer',
+            {},
+            { logger: console, reuploadRequest: WASocket.updateMediaMessage }
+        );
+        fs.writeFileSync(inputPath, buffer);
+
         const stickerPath = path.join(tempDir, `sticker_${Date.now()}.webp`);
         
-        if (isVideo) {
-            await videoToSticker(inputPath, stickerPath);
-        } else {
-            await gifToSticker(inputPath, stickerPath);
-        }
+        // Route to the correct converter
+        if (type === 'video') await videoToSticker(inputPath, stickerPath);
+        else if (type === 'gif') await gifToSticker(inputPath, stickerPath);
+        else await imageToSticker(inputPath, stickerPath);
 
         const stickerBuffer = fs.readFileSync(stickerPath);
         await WASocket.sendMessage(chatJid, { sticker: stickerBuffer }, { quoted: quotedMsg });
@@ -238,15 +247,12 @@ async function handleStickerCommand(WASocket, rawMessage, chatJid, quotedMsg) {
         if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
         if (fs.existsSync(stickerPath)) fs.unlinkSync(stickerPath);
 
-        console.log('✅ Sticker sent successfully!');
-
     } catch (error) {
-        console.error('❌ Sticker creation failed:', error);
-        await WASocket.sendMessage(chatJid, { 
-            text: `❌ Failed to create sticker:\n${error.message}` 
-        }, { quoted: quotedMsg });
+        console.error('❌ Sticker failed:', error);
+        await WASocket.sendMessage(chatJid, { text: `❌ Failed: ${error.message}` }, { quoted: quotedMsg });
     }
 }
+
 // ============================================
 // MAIN MESSAGE HANDLER
 // ============================================
