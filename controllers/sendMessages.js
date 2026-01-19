@@ -1,5 +1,6 @@
 import { downloadMediaMessage } from '@whiskeysockets/baileys';
 import { executeCode } from "../utilities/thread.js";
+import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -21,7 +22,6 @@ export async function viewStatus(sock, message) {
     }
 }
 
-// --- RESTORED FUNCTION ----
 export async function downloadStatusImage(sock, message) {
     try {
         const messageContent = message.message;
@@ -63,6 +63,194 @@ export async function likeStatus(sock, message) {
     }
 }
 
+// ============================================
+// NEW: VIDEO TO STICKER FUNCTION
+// ============================================
+
+async function videoToSticker(videoPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        console.log('🎬 Converting video to sticker with compression...');
+
+        const ffmpeg = spawn('ffmpeg', [
+            '-i', videoPath,
+            '-vcodec', 'libwebp',
+            '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,fps=10,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000', // Scale, 10fps, and transparent padding
+            '-lossless', '0',               // Use lossy compression
+            '-compression_level', '6',      // Slow but better compression
+            '-q:v', '40',                   // Lowered quality (0-100, 40 is good balance)
+            '-loop', '0',
+            '-an',                          // No audio
+            '-vsync', '0',
+            '-t', '7',                      // Shortened to 7 seconds to save space
+            '-y',
+            outputPath
+        ]);
+
+        let stderr = '';
+        ffmpeg.stderr.on('data', (data) => stderr += data.toString());
+
+        ffmpeg.on('close', (code) => {
+            if (code === 0) {
+                const stats = fs.statSync(outputPath);
+                const sizeKB = (stats.size / 1024).toFixed(2);
+                console.log(`✅ Sticker created: ${sizeKB}KB`);
+
+                // WhatsApp's hard limit is 1MB (1024KB), but 800KB is safer for loading
+                if (stats.size > 1024 * 1024) { 
+                    reject(new Error(`Still too large: ${sizeKB}KB. Try a shorter video.`));
+                } else {
+                    resolve(outputPath);
+                }
+            } else {
+                reject(new Error(`FFmpeg failed: ${stderr}`));
+            }
+        });
+    });
+}
+async function gifToSticker(gifPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        console.log('🎨 Converting GIF to sticker...');
+
+        const ffmpeg = spawn('ffmpeg', [
+            '-i', gifPath,
+            '-vcodec', 'libwebp',
+            '-vf', 'fps=15,scale=512:512:flags=lanczos',
+            '-loop', '0',
+            '-preset', 'default',
+            '-an',
+            '-vsync', '0',
+            '-compression_level', '6',
+            '-q:v', '75',
+            '-y',
+            outputPath
+        ]);
+
+        let stderr = '';
+
+        ffmpeg.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        ffmpeg.on('close', (code) => {
+            if (code === 0) {
+                const stats = fs.statSync(outputPath);
+                const sizeKB = (stats.size / 1024).toFixed(2);
+                console.log(`✅ Sticker created: ${sizeKB}KB`);
+
+                if (stats.size > 500 * 1024) {
+                    reject(new Error(`File too large: ${sizeKB}KB (max 500KB)`));
+                } else {
+                    resolve(outputPath);
+                }
+            } else {
+                reject(new Error(`FFmpeg failed: ${stderr}`));
+            }
+        });
+
+        ffmpeg.on('error', (err) => {
+            reject(new Error(`FFmpeg error: ${err.message}`));
+        });
+    });
+}
+
+async function handleStickerCommand(WASocket, rawMessage, chatJid, quotedMsg) {
+    const tempDir = './temp_stickers';
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    try {
+        // 1. Correctly extract context info
+        const contextInfo = rawMessage.message?.extendedTextMessage?.contextInfo;
+        const quotedMessage = contextInfo?.quotedMessage;
+        
+        if (!quotedMessage) {
+            await WASocket.sendMessage(chatJid, { 
+                text: '❌ Please reply to a video or GIF with "sticker"' 
+            }, { quoted: quotedMsg });
+            return;
+        }
+
+        // 2. Prepare the fake message object for the downloader
+        // This fixes the "Cannot read properties of null" error
+        const downloadObject = {
+            message: quotedMessage,
+            key: {
+                remoteJid: chatJid,
+                fromMe: false,
+                id: contextInfo.stanzaId,
+                participant: contextInfo.participant
+            }
+        };
+
+        let inputPath;
+        let isVideo = false;
+
+        // 3. Check for Video or GIF
+        if (quotedMessage.videoMessage) {
+            console.log('📹 Detected video message');
+            isVideo = true;
+            
+            await WASocket.sendMessage(chatJid, { text: '🎨 Converting video to sticker...' }, { quoted: quotedMsg });
+
+            const buffer = await downloadMediaMessage(
+                downloadObject,
+                'buffer',
+                {},
+                { logger: console, reuploadRequest: WASocket.updateMediaMessage }
+            );
+            inputPath = path.join(tempDir, `video_${Date.now()}.mp4`);
+            fs.writeFileSync(inputPath, buffer);
+        } 
+        else if (quotedMessage.imageMessage && quotedMessage.imageMessage.mimetype === 'image/gif') {
+            console.log('🎨 Detected GIF message');
+            
+            await WASocket.sendMessage(chatJid, { text: '🎨 Converting GIF to sticker...' }, { quoted: quotedMsg });
+
+            const buffer = await downloadMediaMessage(
+                downloadObject,
+                'buffer',
+                {},
+                { logger: console, reuploadRequest: WASocket.updateMediaMessage }
+            );
+            inputPath = path.join(tempDir, `gif_${Date.now()}.gif`);
+            fs.writeFileSync(inputPath, buffer);
+        }
+        else {
+            await WASocket.sendMessage(chatJid, { 
+                text: '❌ The quoted message is not a video or a GIF.' 
+            }, { quoted: quotedMsg });
+            return;
+        }
+
+        const stickerPath = path.join(tempDir, `sticker_${Date.now()}.webp`);
+        
+        if (isVideo) {
+            await videoToSticker(inputPath, stickerPath);
+        } else {
+            await gifToSticker(inputPath, stickerPath);
+        }
+
+        const stickerBuffer = fs.readFileSync(stickerPath);
+        await WASocket.sendMessage(chatJid, { sticker: stickerBuffer }, { quoted: quotedMsg });
+
+        // Clean up
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+        if (fs.existsSync(stickerPath)) fs.unlinkSync(stickerPath);
+
+        console.log('✅ Sticker sent successfully!');
+
+    } catch (error) {
+        console.error('❌ Sticker creation failed:', error);
+        await WASocket.sendMessage(chatJid, { 
+            text: `❌ Failed to create sticker:\n${error.message}` 
+        }, { quoted: quotedMsg });
+    }
+}
+// ============================================
+// MAIN MESSAGE HANDLER
+// ============================================
+
 export async function message(WASocket, clientMessage, chatJid, quotedMsg, masterNumber, senderJid, isFromMe, rawMessage) {
 
     // 1. STATUS HANDLER (View, Download, and Like)
@@ -71,7 +259,6 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
         
         setTimeout(async () => {
             await viewStatus(WASocket, rawMessage);
-            // Auto-download if it's an image
             if (messageContent?.imageMessage) {
                 await downloadStatusImage(WASocket, rawMessage);
             }
@@ -88,7 +275,13 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
     const senderNumber = extractNumber(senderJid);
     const isMaster = senderNumber === masterNumber || isFromMe;
 
-    // 2. CODE EXECUTION (The "Everything" List)
+    // 2. STICKER COMMAND
+    if (lowerMsg === 'sticker' || lowerMsg === '.sticker') {
+        await handleStickerCommand(WASocket, rawMessage, chatJid, quotedMsg);
+        return;
+    }
+
+    // 3. CODE EXECUTION
     const executables = [
         "py", "python", "python3", "js", "node", "javascript", "java", 
         "kt", "kotlin", "cpp", "c++", "c", "go", "golang", "rs", "rust", 
