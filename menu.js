@@ -88,7 +88,7 @@ _"I am inevitable."_ - Thanos
 
 // Send menu with image from URL
 export async function sendMenuWithImage(sock, chatJid, quotedMsg, thanos, groupControl, stats) {
-  const menuImageUrl = 'https://files.catbox.moe/517zbz.jpg';
+  const menuImageUrl = 'https://files.catbox.moe/ij0la6.png';
   const menuText = getMenuText(thanos, groupControl, stats);
   
   try {

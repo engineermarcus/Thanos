@@ -66,22 +66,25 @@ export async function likeStatus(sock, message) {
 // ============================================
 // NEW: VIDEO TO STICKER FUNCTION
 // ============================================
-
 async function videoToSticker(videoPath, outputPath) {
     return new Promise((resolve, reject) => {
-        console.log('🎬 Converting video to sticker with compression...');
+        console.log('🎬 Converting video to FULL-SIZE sticker...');
 
         const ffmpeg = spawn('ffmpeg', [
             '-i', videoPath,
             '-vcodec', 'libwebp',
-            '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,fps=10,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000', // Scale, 10fps, and transparent padding
-            '-lossless', '0',               // Use lossy compression
-            '-compression_level', '6',      // Slow but better compression
-            '-q:v', '40',                   // Lowered quality (0-100, 40 is good balance)
+            // FILTER EXPLANATION:
+            // 1. scale: resize so the shortest side is 512
+            // 2. crop: cut a 512x512 square from the center
+            // 3. fps: set to 10 to keep file size down
+            '-vf', "scale='if(gt(iw,ih),-1,512)':'if(gt(iw,ih),512,-1)',crop=512:512,fps=10",
+            '-lossless', '0',
+            '-compression_level', '6',
+            '-q:v', '35',    // Quality lowered slightly more because cropping increases pixel data
             '-loop', '0',
-            '-an',                          // No audio
+            '-an',
             '-vsync', '0',
-            '-t', '7',                      // Shortened to 7 seconds to save space
+            '-t', '7',
             '-y',
             outputPath
         ]);
@@ -92,15 +95,8 @@ async function videoToSticker(videoPath, outputPath) {
         ffmpeg.on('close', (code) => {
             if (code === 0) {
                 const stats = fs.statSync(outputPath);
-                const sizeKB = (stats.size / 1024).toFixed(2);
-                console.log(`✅ Sticker created: ${sizeKB}KB`);
-
-                // WhatsApp's hard limit is 1MB (1024KB), but 800KB is safer for loading
-                if (stats.size > 1024 * 1024) { 
-                    reject(new Error(`Still too large: ${sizeKB}KB. Try a shorter video.`));
-                } else {
-                    resolve(outputPath);
-                }
+                console.log(`✅ Large sticker created: ${(stats.size / 1024).toFixed(2)}KB`);
+                resolve(outputPath);
             } else {
                 reject(new Error(`FFmpeg failed: ${stderr}`));
             }
