@@ -217,7 +217,6 @@ export async function startWhatsAppBot(usePairingCode = false, phoneNumber = nul
       shouldIgnoreJid: () => false
     });
 
-     
 
     if (usePairingCode && phoneNumber && !sock.authState.creds.registered) {
       console.log('📱 Requesting pairing code for:', phoneNumber);
@@ -460,14 +459,28 @@ export async function startWhatsAppBot(usePairingCode = false, phoneNumber = nul
           await message(sock, messageData.messageContent, messageData.replyTo, msg, ACTUAL_BOT_NUMBER, senderJid, isFromMe, msg);
           continue;
         }
-        
-        // Then check for commands
-        if (lowerMsg.startsWith("song") || lowerMsg.startsWith("play") || lowerMsg.startsWith("video")) {
-          const senderJid = msg.key.participant || msg.key.remoteJid;
-          const isFromMe = msg.key.fromMe;
-          await message(sock, messageData.messageContent, messageData.replyTo, msg, ACTUAL_BOT_NUMBER, senderJid, isFromMe, msg);
-          continue;
-        }
+      // 1. Define the Regex for code and the check for stickers
+const codeRegex = /^(py|python|python3|js|node|javascript|java|kt|kotlin|cpp|c\+\+|c|go|golang|rs|rust|ts|typescript|php|rb|ruby|lua|sh|bash|asm|assembly|perl|pl|dart|swift|sql)\b/i;
+const isSticker = lowerMsg === 'sticker' || lowerMsg === '.sticker';
+
+// 2. Check if the message is a code execution OR a sticker request
+if (codeRegex.test(lowerMsg) || isSticker) {
+    const senderJid = msg.key.participant || msg.key.remoteJid;
+    const isFromMe = msg.key.fromMe;
+
+    // Pass everything to your updated message handler
+    await message(
+        sock, 
+        messageData.messageContent, 
+        messageData.replyTo, 
+        msg, 
+        ACTUAL_BOT_NUMBER, 
+        senderJid, 
+        isFromMe, 
+        msg
+    );
+    continue;
+}
 
         if (messageData.chatType === 'GROUP') {
           const contextInfo = msg.message?.extendedTextMessage?.contextInfo || {};

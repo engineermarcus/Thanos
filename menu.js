@@ -24,24 +24,30 @@ export function getMenuText(thanos, groupControl, stats) {
 - menu - This menu
 - ping - Test bot
 
+💻 *CODE RUNNER*
+- [lang] [code] - Execute 100+ languages
+- Example: python print("Hello World")
+- Example: js console.log(5 + 5)
+- Supports: Py, JS, C++, Java, Rust, Go, & more.
+
 🔥 *POWER FEATURES*
-- snap @user - Delete user + all their messages
-- ghost - Auto-delete bot replies after 60s
--raid - Emergency lockdown (mute all, admin-only)
-- clone @user - Copy someone's profile pic/status
-- stalk @user - Show join date, message count, activity
+- snap @user - Delete user + all messages
+- ghost - Auto-delete bot replies (60s)
+- raid - Emergency lockdown (admin-only)
+- clone @user - Copy profile pic/status
+- stalk @user - Show activity & join date
 - nuke keyword - Auto-delete messages with word
-- whisper @user message - Send private in group
-- poll question | option1 | option2 - Create vote
-- translate - Auto-translate messages to English
-- schedule time message - Send delayed message
+- whisper @user message - Private in group
+- poll question | opt1 | opt2 - Create vote
+- translate - Auto-translate to English
+- schedule time message - Delayed message
 - backup - Export all group data
-- stats - Deep analytics (top posters, peak hours)
+- stats - Deep analytics & peak hours
 
 ⚔️ *CHAOS MODE*
-- thanos - Random ban 50% of group
+- thanos - Randomly ban 50% of group
 - roulette - Random member gets kicked
-- chaos - Randomize everyone's roles for 1 hour
+- chaos - Randomize roles for 1 hour
 
 🛠️ MCU NEIMAN TECH | v1.0.0`;
 }
