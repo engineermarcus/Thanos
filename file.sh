@@ -1,1 +1,1 @@
-pkill node
+ls

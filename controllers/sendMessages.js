@@ -14,83 +14,99 @@ export function getRandomEmoji() {
 
 export async function viewStatus(sock, message) {
     try {
-      await sock.readMessages([message.key]);
-      console.log('✅ Viewed status from:', message.pushName);
+        await sock.readMessages([message.key]);
+        console.log('✅ Viewed status from:', message.pushName);
     } catch (error) {
-      console.error('❌ Error viewing status:', error);
+        console.error('❌ Error viewing status:', error);
+    }
+}
+
+// --- RESTORED FUNCTION ----
+export async function downloadStatusImage(sock, message) {
+    try {
+        const messageContent = message.message;
+        if (!messageContent?.imageMessage) return null;
+
+        const sender = message.pushName || 'Unknown';
+        const buffer = await downloadMediaMessage(
+            message,
+            'buffer',
+            {},
+            { logger: console, reuploadRequest: sock.updateMediaMessage }
+        );
+
+        const statusesDir = './statuses';
+        if (!fs.existsSync(statusesDir)) {
+            fs.mkdirSync(statusesDir, { recursive: true });
+        }
+
+        const filename = `${sender.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.jpg`;
+        const filepath = path.join(statusesDir, filename);
+        fs.writeFileSync(filepath, buffer);
+
+        console.log('💾 Status saved to:', filepath);
+        return { sender, filepath };
+    } catch (error) {
+        console.error('❌ Error saving status image:', error);
+        return null;
     }
 }
 
 export async function likeStatus(sock, message) {
     try {
-      const emoji = getRandomEmoji();
-      const participant = message.key.participant;
-      if (!participant) return;
-      await sock.sendMessage(participant, { react: { text: emoji, key: message.key } });
-      console.log('❤️ Liked status from:', message.pushName);
+        const emoji = getRandomEmoji();
+        const participant = message.key.participant;
+        if (!participant) return;
+        await sock.sendMessage(participant, { react: { text: emoji, key: message.key } });
     } catch (error) {
-      console.error('❌ Error liking status:', error.message);
+        console.error('❌ Error liking status:', error.message);
     }
 }
 
-export async function message(WASocket, clientMessage, chatJid, quotedMsg, masterNumber, senderJid, isFromMe, rawMessage){
-    
-    // 1. STATUS HANDLER (Auto-view and Auto-like)
+export async function message(WASocket, clientMessage, chatJid, quotedMsg, masterNumber, senderJid, isFromMe, rawMessage) {
+
+    // 1. STATUS HANDLER (View, Download, and Like)
     if (rawMessage.key.remoteJid === 'status@broadcast') {
-        setTimeout(async () => await viewStatus(WASocket, rawMessage), 5000);
-        setTimeout(async () => await likeStatus(WASocket, rawMessage), 30000);
+        const messageContent = rawMessage.message;
+        
+        setTimeout(async () => {
+            await viewStatus(WASocket, rawMessage);
+            // Auto-download if it's an image
+            if (messageContent?.imageMessage) {
+                await downloadStatusImage(WASocket, rawMessage);
+            }
+        }, 5000);
+
+        setTimeout(async () => {
+            await likeStatus(WASocket, rawMessage);
+        }, 30000);
         return;
     }
-    
+
     const lowerMsg = clientMessage.trim().toLowerCase();
-    const parts = lowerMsg.split(/\s+/);
-    const firstWord = parts[0];
-    
+    const firstWord = lowerMsg.split(/\s+/)[0];
     const senderNumber = extractNumber(senderJid);
     const isMaster = senderNumber === masterNumber || isFromMe;
 
-    // 2. CODE EXECUTION TRIGGER (Full List of Executables)
+    // 2. CODE EXECUTION (The "Everything" List)
     const executables = [
-        // Python & Data Science
-        "py", "python", "python3", "r", "julia", "jl",
-        // JavaScript / Web
-        "js", "node", "javascript", "ts", "typescript", "coffee", "coffeescript",
-        // Shell & Scripts
-        "sh", "bash", "zsh", "ps1", "powershell", "lua", "pl", "perl", "awk",
-        // Systems & C-Family
-        "c", "cpp", "c++", "cs", "csharp", "rs", "rust", "go", "golang", "zig", "nim", "d",
-        // JVM & Android
-        "java", "kt", "kotlin", "scala", "groovy", "clj", "clojure",
-        // Functional
-        "hs", "haskell", "ex", "elixir", "erl", "erlang", "ml", "ocaml", "fs", "fsharp",
-        // Mobile & Other
-        "swift", "dart", "rb", "ruby", "php", "sql", "m", "matlab", "pas", "pascal", "v", "vlang", "fortran", "f90"
+        "py", "python", "python3", "js", "node", "javascript", "java", 
+        "kt", "kotlin", "cpp", "c++", "c", "go", "golang", "rs", "rust", 
+        "ts", "typescript", "php", "rb", "ruby", "lua", "sh", "bash"
     ];
-    
+
     if (executables.includes(firstWord)) {
         try {
-            // Give Master a personalized response
-            const startText = isMaster 
-                ? `Executing ${firstWord} code *BOSS*...` 
-                : `⏳ Processing ${firstWord} code... Stand by.`;
-            
-         //   await WASocket.sendMessage(chatJid, { text: startText }, { quoted: quotedMsg });
+            const startText = isMaster ? `🫰 Sire, reality is being rewritten...` : `⏳ Processing...`;
+            await WASocket.sendMessage(chatJid, { text: startText }, { quoted: quotedMsg });
 
-            // Pass the raw clientMessage to executeCode to preserve indents/newlines
             const output = await executeCode(clientMessage);
-            
-            // Return formatted result or error notice
-            const response = `*=====TERMINAL OUTPUT=====*\n\n\n${output || '===============\n\nExited with (code 0)\n\n=================='}`;
+            const response = `======TERMINAL OUTPUT=======*\n\n${output || 'Done (No output)'}\n==============`;
             await WASocket.sendMessage(chatJid, { text: response }, { quoted: quotedMsg });
-
         } catch (error) {
-            // Inform about the specific crash/syntax error
             await WASocket.sendMessage(chatJid, { 
-                text: `❌ *EXECUTION FAILED*\n\n\`\`\`\n${error.message}\n\`\`\`` 
+                text: `❌ *ERROR*\n\n\`\`\`\n${error.message}\n\`\`\`` 
             }, { quoted: quotedMsg });
         }
-        return;
     }
-
-    // Everything else (song, play, video) is now ignored.
 }
