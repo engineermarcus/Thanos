@@ -92,6 +92,7 @@ export async function editText(WASocket, newText, senderNumber, messageToEdit){
 }
 
 export async function sendThanosMessage(WASocket, userMessage, senderNumber, quotedMsg, originalMsg) {
+
     console.log('📤 sendThanosMessage called with:', {
         senderNumber,
         userMessage: userMessage.substring(0, 30),
@@ -100,9 +101,12 @@ export async function sendThanosMessage(WASocket, userMessage, senderNumber, quo
     });
 
     try {
+        
         const sentMsg = await WASocket.sendMessage(senderNumber, { 
             text: `typing....`
         }, quotedMsg ? { quoted: quotedMsg } : {});
+   
+       
         
         if (sentMsg && sentMsg.key && sentMsg.key.id) {
             trackBotMessage(sentMsg.key.id);
@@ -114,7 +118,6 @@ export async function sendThanosMessage(WASocket, userMessage, senderNumber, quo
         
         const senderJid = originalMsg.key.participant || originalMsg.key.remoteJid;
         const contextInfo = await getContextInfo(senderNumber, senderJid);
-        
         const history = await getHistory(senderNumber, 10);
         
         const contextualMessage = contextInfo.chatType === 'group' 

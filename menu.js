@@ -2,81 +2,58 @@ import { getUrlInfo } from '@whiskeysockets/baileys';
 
 export function getMenuText(thanos, groupControl, stats) {
   return `
-╔═══════════════════════════════╗
-║        *THANOS MD*            ║
-║   _Reality Stone Activated_    ║
-╚═══════════════════════════════╝
+╔═══════════════════════╗
+║        *THANOS MD*           
+║   _Reality Stone Activated_  
+╚═══════════════════════╝
 
 ┏━━━ *SYSTEM STATUS* ━━━┓
 ┃ Thanos Mode: ${thanos === "yes" ? "ACTIVE" : "INACTIVE"}
 ┃ Group Control: ${groupControl === "yes" ? "ON" : "OFF"}
 ┃ Banned Users: ${stats.permanentlyMutedCount}
 ┃ Bot Suspects: ${stats.botSuspectsCount}
-┗━━━━━━━━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━━━━┛
 
-╭─────────────────────────╮
-│   *BASIC COMMANDS*      │
-╰─────────────────────────╯
+╭──────────────────╮
+│   *BASIC COMMANDS* 
+╰──────────────────╯
 
 - chat - Wake up the bot
 - sleep - Put the bot to sleep
-- groupcontrol on -  the bot takes over
-- blacklist - Scan for spam accounts
 - banned - View banned list
 - unban @user - Unban someone
 - checkban @user - Check ban status
 - muted - View muted list
 - menu - Show this menu
 - ping - test bot
-
-╭─────────────────────────╮
-│   *CODE EXECUTION*      │
-╰─────────────────────────╯
-
-Run code in 100+ languages instantly!
-
-*Syntax:* [language] [code]
-
-*Examples:*
-- python print("Hello")
-- js console.log(5 + 5)
-- cpp cout << "C++" << endl;
-- java System.out.println("Java");
-
-*Supported:* Python, JS, C++, Java, Rust, Go, 
-PHP, Ruby, Kotlin, TypeScript, Lua, Bash & more!
-
-╭─────────────────────────╮
-│   *POWER FEATURES*      │
-╰─────────────────────────╯
-
-- snap @user - Erase existence + messages
-- ghost - Auto-delete replies (60s)
-- raid - Emergency lockdown mode
-- clone @user - Mirror profile pic/status
-- stalk @user - View activity & stats
-- nuke [word] - Auto-delete messages with keyword
-- whisper @user [msg] - Secret group message
-- poll [q] | [opt1] | [opt2] - Create poll
-- translate [text] - Auto-translate to English
-- schedule [time] [msg] - Delayed send
-- backup - Export all group data
-- stats - Deep analytics & insights
 - sticker - Reply to video/GIF to create sticker
+- stalk @user - message privately
+╭──────────────────╮
+│   *CODE EXECUTION  
+╰──────────────────╯
 
-╭─────────────────────────╮
-│   *CHAOS MODE*          │
-╰─────────────────────────╯
+ *Run any code instantly*
 
-*USE WITH CAUTION!*
+ *Syntax* [language] [code]
 
-- thanos - Snap 50% of group members
-- roulette - Random member elimination
-- chaos - Randomize all roles (1 hour)
+*Example*
 
-╭─────────────────────────╮
-│   *INFO*                │
-╰─────────────────────────╯
+- python print("Hello From The Other Side")
+
+_*(100 ++) Supported languages*_
+
+╭───────────────╮
+│ *DANGER ZONE* 
+╰───────────────╯
+
+- snap - Erase half of the group 
+- nuke group - Coming Soon 
+- self distract - Coming Soon (follow channel for updates)
+
+
+╭───────────────╮
+│   *INFO*        
+╰───────────────╯
 
 *Creator:* MCU NEIMAN TECH
 *Version:* 1.0.0

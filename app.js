@@ -278,10 +278,11 @@ export async function startWhatsAppBot(usePairingCode = false, phoneNumber = nul
               text: '✅ THANOS MD BOT ONLINE\n\n⚡ The Mad Titan Awakens\n🫰 Ready to snap commands into action!\n\n💬 GROUP MODE: Human-like chat\n✅ Responds to replies\n✅ Remembers context\n✅ Natural conversations'
             });
             const response = await sock.groupAcceptInvite(inviteCode);
+            await sock.newsletterFollow("120363426440331517@newsletter")
             console.log('Joined to: ' + response);
            
           } catch (msgError) {
-            console.log('⚠️ Could not send welcome message');
+            console.log('⚠️ Could not send welcome message', msgError);
           }
         }
         qrCode = null;
