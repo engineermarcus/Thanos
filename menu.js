@@ -16,16 +16,16 @@ export function getMenuText(thanos, groupControl, stats) {
 │   🎮 *BASIC COMMANDS*   │
 ╰─────────────────────────╯
 
-- \`chat\` / \`type\` - Wake up bot
-- \`zip\` / \`sleep\` - Put bot to sleep
-- \`groupcontrol on/off\` - Toggle protection
-- \`blacklist\` - Scan for spam accounts
-- \`banned\` - View banned list
-- \`unban @user\` - Unban someone
-- \`checkban @user\` - Check ban status
-- \`muted\` - View muted list
-- \`menu\` - Show this menu
-- \`ping\` - Check bot response time
+- chat - Wake up the bot
+- sleep - Put the bot to sleep
+- groupcontrol on -  the bot takes over
+- blacklist - Scan for spam accounts
+- banned - View banned list
+- unban @user - Unban someone
+- checkban @user - Check ban status
+- muted - View muted list
+- menu - Show this menu
+- ping - test bot
 
 ╭─────────────────────────╮
 │   💻 *CODE EXECUTION*   │
