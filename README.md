@@ -158,10 +158,24 @@ But really everything is mostly automated, you depends on your bot setup.
 ## 🙏 ACKNOWLEDGMENTS
 
 Built with:
-- [@whiskeysockets/baileys](https://github.com/WhiskeySockets/Baileys) - WhatsApp Web API
-- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) - Database hosting
-- [Express.js](https://expressjs.com/) - Web framework
-- [Socket.IO](https://socket.io/) - Real-time communication
+
+  **WhatsApp Web API**
+  
+   [![@whiskeysockets/baileys](https://img.shields.io/badge/@whiskeys-Baileys-black?style=for-the-badge&logo=render)](https://github.com/WhiskeySockets/Baileys)
+
+   **Database hosting**
+  
+   [![MONGODB](https://img.shields.io/badge/MONGODB-ATLAS-black?style=for-the-badge&logo=render)](https://www.mongodb.com/cloud/atlas)
+
+  **Web framework**
+
+   [![EXPRESSJS](https://img.shields.io/badge/EXPRESS-JS-black?style=for-the-badge&logo=render)](https://expressjs.com)
+
+  **Real-time communication**
+
+
+   [![SOCKETIO](https://img.shields.io/badge/Soket-IO-black?style=for-the-badge&logo=render)](https://socketio/)
+
 
 ---
 
