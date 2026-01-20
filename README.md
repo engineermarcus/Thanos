@@ -38,7 +38,7 @@
 
 
 # ⚠️ NOTE
-*if you don't insert a database name or if you choose a name that has been used by someone else the bot won't work reliably or oh! gosh! it won't fucking work. Well, performance issues, you must be creative*
+*if you don't insert a database name the bot won't work reliably, but seriously it won't fucking work. Well, performance issues, try to be reasonable*
 
 
 
@@ -50,6 +50,11 @@
 ```sh
   MONGO_URI=MONGO_URI=mongodb+srv://afrimerge:marcus@b52.uhymx.mongodb.net/?appName=b52 // Replace with your own mongo uri
 ``` 
+**I'm letting you use my database for now but setup yours, mine will be soon deprecated**
+
+
+[![MONGODB](https://img.shields.io/badge/REGISTER-MONGODB-black?style=for-the-badge&logo=render)](https://www.mongodb.com/cloud/atlas/register)
+
 *You can fuck up however you like, control is in your hands now, you feel so entitled. Happy Free Deployment 😭*
 
 
@@ -137,11 +142,14 @@ npm start
 - menu - Show this menu
 - ping - test bot
 
-But really everything is mostly automated 
+But really everything is mostly automated, you depends on your bot setup.
 
 ## 📄 LICENSE
 
-*This project is licensed under the MIT License - see the LICENSE file for details.*
+**This project is licensed under the MIT License - see the LICENSE file for details.**
+
+[![LICENSE](https://img.shields.io/badge/VIEW-LICENSE-black?style=for-the-badge&logo=license)](./LICENSE)
+
 
 ---
 
