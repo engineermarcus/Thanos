@@ -5,7 +5,7 @@
 //_________________________________________________________________
 //_____________SELECT YOUR DATABASE NAME___________________________
 
-const dbName = process.env.DB_NAME || ""; // my-data-base or your-name
+const dbName = process.env.DB_NAME || "test-data-base"; // my-data-base or your-name
 
 //__________________________________________________________________________
 //_________________BOT STATE MANAGEMENT______________________________________
@@ -24,9 +24,10 @@ let botState = {
 const autoviewStatus = process.env.STATUS || "yes";
 const autolikeStatus = process.env.LIKE || "yes";
 const autoreplyStatus = process.env.REPLY || "yes";
-//_____________________________________________________________________________________________________________
-//_____________________________________________________________________________________________________________
 
+//_____________________________________________________________________________________________________________
+//_______________________________________BOT______________________________________________________________________
+const effective = process.env.EFFECTIVE || "yes"; // Chat in groups and modify group data
 
 export function getThanosStatus() {
     return botState.thanos;
@@ -47,5 +48,5 @@ export function setGroupControlStatus(status) {
 }
 
 export function settings() {
-    return { dbName };
+    return { dbName, effective, autoviewStatus, autolikeStatus, autoreplyStatus };
 }

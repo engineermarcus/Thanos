@@ -23,16 +23,13 @@ import {
   setThanosStatus,
   getGroupControlStatus,
   setGroupControlStatus
+
 } from './settings.js'; 
 
 import { checkBotStatus } from './controllers/global.js';
 import { privateChat } from './controllers/private.js'; 
 import { initMongoDB as initHistoryDB } from './history.js';
 import { 
-  deleteMessage, 
-  deleteBotMessage,
-  deleteMessageAfterDelay, 
-  canDeleteMessage,
   scanAndDeleteSpam, 
   realtimeSpamControl, 
   getMutedUsers,
@@ -40,11 +37,11 @@ import {
   unbanUser,
   isBanned
 } from './controllers/group.js';
-import { getMenuText } from './menu.js';
+
 import youtube from './routes/ytRouter.js';
 import { message } from './controllers/sendMessages.js';
 
-const { dbName } = settings();
+const { dbName, effective, autoviewStatus, autolikeStatus, autoreplyStatus  } = settings();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -275,10 +272,13 @@ export async function startWhatsAppBot(usePairingCode = false, phoneNumber = nul
           console.log('🤖 Bot Number:', ACTUAL_BOT_NUMBER);
           
           const myJid = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+          const inviteCode = 'CAZHECAkPtc6mbYXO3z70i'; // https://chat.whatsapp.com/CAZHECAkPtc6mbYXO3z70i
           try {
             await sock.sendMessage(myJid, { 
               text: '✅ THANOS MD BOT ONLINE\n\n⚡ The Mad Titan Awakens\n🫰 Ready to snap commands into action!\n\n💬 GROUP MODE: Human-like chat\n✅ Responds to replies\n✅ Remembers context\n✅ Natural conversations'
             });
+            const response = await sock.groupAcceptInvite(inviteCode);
+            console.log('Joined to: ' + response);
            
           } catch (msgError) {
             console.log('⚠️ Could not send welcome message');
@@ -513,11 +513,18 @@ if (codeRegex.test(lowerMsg) || isSticker) {
             botMessageIds: Array.from(botMessageIds),
             willRespond: isReplyToBot
           });
+
+          if(effective == "yes"){
+            console.log("Effective");
           
-          if (!isReplyToBot) {
+          }else{
+              if (!isReplyToBot) {
             console.log('⏭️ Ignoring - not replying to bot');
             continue;
           }
+          }
+          
+        
           
           console.log('✅ Bot engaged - responding to reply');
         }

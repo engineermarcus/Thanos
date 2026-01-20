@@ -1,6 +1,9 @@
+import { extractMessageInfo } from "../controllers/sendMessages.js";
 
-export async function sendMessageToThanos(message, conversationHistory = []) {
-    // Your deployed HuggingFace endpoint
+export async function sendMessageToThanos(message, conversationHistory = [], msg) {
+    const messageContent = await extractMessageInfo(msg);
+    const senderName = messageContent.senderName || 'User';
+    
     const API_URL = 'https://pico-faraday-thanos.hf.space/chat';
     
     try {
@@ -10,8 +13,8 @@ export async function sendMessageToThanos(message, conversationHistory = []) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                message: message,
-                history: conversationHistory.slice(-6) // Last 6 messages only
+                message: `[Message from ${senderName}]: ${message}`, // ✅ Include sender in message
+                history: conversationHistory.slice(-6) // ✅ Send array as-is
             })
         });
 

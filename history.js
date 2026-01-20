@@ -1,15 +1,13 @@
 import { MongoClient } from 'mongodb';
+import { extractMessageInfo } from "./controllers/sendMessages.js";
 
 let client;
 let db;
 let historyCollection;
 
-const MAX_MESSAGES_PER_USER = 10; // Maximum messages to keep per user
+const MAX_MESSAGES_PER_USER = 100; // Maximum messages to keep per user
 
-/**
- * Initialize MongoDB connection
- * @param {string} uri - MongoDB Atlas connection string
- */
+
 export async function initMongoDB(uri) {
     try {
         client = new MongoClient(uri);
@@ -60,12 +58,7 @@ async function maintainCacheLimit(userId) {
     }
 }
 
-/**
- * Adds a message to the chat history
- * @param {string} userId - Unique identifier for the user (phone number)
- * @param {string} role - Either 'user' or 'assistant'
- * @param {string} content - The message content
- */
+
 export async function addMessage(userId, role, content) {
     try {
         await historyCollection.insertOne({
@@ -83,12 +76,7 @@ export async function addMessage(userId, role, content) {
     }
 }
 
-/**
- * Gets recent chat history for a specific user
- * @param {string} userId - Unique identifier for the user
- * @param {number} limit - Maximum number of messages to retrieve (default: 10)
- * @returns {Array} Array of {role, content} objects
- */
+
 export async function getHistory(userId, limit = 10) {
     try {
         const messages = await historyCollection
@@ -108,10 +96,7 @@ export async function getHistory(userId, limit = 10) {
     }
 }
 
-/**
- * Clears all chat history for a specific user (starts a new thread)
- * @param {string} userId - Unique identifier for the user
- */
+
 export async function clearHistory(userId) {
     try {
         const result = await historyCollection.deleteMany({ user_id: userId });
@@ -122,10 +107,7 @@ export async function clearHistory(userId) {
     }
 }
 
-/**
- * Deletes old chat history (older than X days)
- * @param {number} days - Number of days to keep history for
- */
+
 export async function cleanOldHistory(days = 30) {
     try {
         const cutoffDate = new Date();
@@ -142,11 +124,7 @@ export async function cleanOldHistory(days = 30) {
     }
 }
 
-/**
- * Gets the total number of messages for a user
- * @param {string} userId - Unique identifier for the user
- * @returns {number} Total message count
- */
+
 export async function getMessageCount(userId) {
     try {
         const count = await historyCollection.countDocuments({ user_id: userId });
@@ -157,26 +135,7 @@ export async function getMessageCount(userId) {
     }
 }
 
-/**
- * Formats history for the AI prompt
- * @param {Array} history - Array of {role, content} objects
- * @returns {string} Formatted string for system prompt
- */
-export function formatHistoryForPrompt(history) {
-    if (!history || history.length === 0) {
-        return 'This is the start of your conversation with this user.';
-    }
-    
-    const formatted = history
-        .map(msg => `${msg.role === 'user' ? 'User' : 'You'}: ${msg.content}`)
-        .join('\n');
-    
-    return `Previous conversation:\n${formatted}\n\nRespond to the user's latest message naturally, keeping the conversation context in mind.`;
-}
 
-/**
- * Close MongoDB connection
- */
 export async function closeMongoDB() {
     if (client) {
         await client.close();

@@ -123,7 +123,7 @@ export async function sendThanosMessage(WASocket, userMessage, senderNumber, quo
         
         console.log('📍 Context:', contextInfo);
         
-        const response = await sendMessageToThanos(contextualMessage, history);
+        const response = await sendMessageToThanos(contextualMessage, history, originalMsg);
         
         await addMessage(senderNumber, 'user', userMessage);
         await addMessage(senderNumber, 'assistant', response);
