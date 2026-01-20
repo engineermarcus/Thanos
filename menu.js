@@ -2,12 +2,11 @@ import { getUrlInfo } from '@whiskeysockets/baileys';
 
 export function getMenuText(thanos, groupControl, stats) {
   return `
-╔═══════════════════════╗
-║        *THANOS MD*           
-║   _Reality Stone Activated_  
-╚═══════════════════════╝
+╔═══════════════╗
+║ *THANOS MD*           
+╚═══════════════╝
 
-┏━━━ *SYSTEM STATUS* ━━━┓
+┏━ *SYSTEM STATUS* ━┓
 ┃ Thanos Mode: ${thanos === "yes" ? "ACTIVE" : "INACTIVE"}
 ┃ Group Control: ${groupControl === "yes" ? "ON" : "OFF"}
 ┃ Banned Users: ${stats.permanentlyMutedCount}
