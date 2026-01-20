@@ -375,7 +375,7 @@ export async function message(WASocket, clientMessage, chatJid, quotedMsg, maste
            // await WASocket.sendMessage(chatJid, { text: startText }, { quoted: quotedMsg });
 
             const output = await executeCode(clientMessage,rawMessage);
-            const response = `*======TERMINAL OUTPUT=======*\n\n${output || 'Done (No output)'}\n==============`;
+            const response = `*======TERMINAL OUTPUT=======*\n\n${output || 'Done (No output)'}\n=========================`;
             await WASocket.sendMessage(chatJid, { text: response }, { quoted: quotedMsg });
         } catch (error) {
             await WASocket.sendMessage(chatJid, { 

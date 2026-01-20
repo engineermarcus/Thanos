@@ -7,8 +7,8 @@
 
 const dbName = process.env.DB_NAME || ""; // my-data-base or your-name
 
-//_________________________________________________________________________
-//_________________BOT STATE MANAGEMENT____________________________________
+//__________________________________________________________________________
+//_________________BOT STATE MANAGEMENT______________________________________
 
 // Persistent bot state - initialized once when module loads
 let botState = {
@@ -24,7 +24,6 @@ let botState = {
 const autoviewStatus = process.env.STATUS || "yes";
 const autolikeStatus = process.env.LIKE || "yes";
 const autoreplyStatus = process.env.REPLY || "yes";
-const autofollowStatus = process.env.FOLLOW || "yes";
 //_____________________________________________________________________________________________________________
 //_____________________________________________________________________________________________________________
 
