@@ -108,8 +108,10 @@ npm start
 
 *How do we call it ? Termux! Hey Linus Torvalds I'm sorry, I didn't mean to offend your app. I didn't mean to be racist on your app either*
 
-*If setup was successful, you are the goat*
-<p align="center">
+
+<p align="center"> 
+  <p>If everything worked successfully,  🎊 Congradulations You Are The Goat Man</p>
+</br>
   <img src="./thanos_demo.gif" alt="Thanos Bot Demo" width="100">
 </p>
 
