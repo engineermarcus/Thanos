@@ -20,6 +20,8 @@
 
 ---
 
+
+
 ##  OVERVIEW
 
 **THANOS MD BOT** is an advanced WhatsApp bot powered by AI, **BOT** straight out of the movie. But really, ⚠️ Report Abuse: <a href="https://wa.me/254725693306?text=Hello%20Marcus%20*I%20LOVE%20YOU*">🇰🇪 254725693306 </a>. Not abuse sorry, any performance issues or just buy coffee.
@@ -146,6 +148,8 @@ npm start
 
 But really everything is mostly automated, you depends on your bot setup.
 
+<div align="center">
+
 ## 📄 LICENSE
 
 **This project is licensed under the MIT License - see the LICENSE file for details.**
@@ -176,6 +180,7 @@ Built with:
 
    [![SOCKETIO](https://img.shields.io/badge/Soket-IO-black?style=for-the-badge&logo=render)](https://socketio/)
 
+</div>
 
 ---
 
