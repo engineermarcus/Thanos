@@ -16,19 +16,42 @@ export function getMenuText(thanos, groupControl, stats) {
 ┗━━━━━━━━━━━━━┛
 
 ╭──────────────────╮
-│   *BASIC COMMANDS* 
+│   *GROUP COMMANDS* 
 ╰──────────────────╯
 
-- chat - Wake up the bot
-- sleep - Put the bot to sleep
 - banned - View banned list
 - unban @user - Unban someone
 - checkban @user - Check ban status
 - muted - View muted list
 - menu - Show this menu
 - ping - test bot
-- sticker - Reply to video/GIF to create sticker
-- stalk @user - message privately
+- sticker - Video/GIF to sticker(0.93mb max)
+- stalk @user - message privately (Coming Soon)
+- snap @user - kick user (Coming Soon)
+- clone @user - copy user profile (Coming Soon)
+- kiss - (Coming Soon)
+- Hug - (Coming Soon)
+- Kill _ (Coming Soon)
+- Snooze - (Coming Soon)
+- Track - (Coming Soon)
+- Hack @user - (Coming Soon)
+- Raid @group - (Coming Soon)
+- AutoGoodBye ON/OFF - (Coming Soon )
+- Welcome ON/OFF - (Coming Soon)
+- AntiViewOnce ON/OFF - (Coming Soon)
+- TextToVideo - (Coming Soon)
+- VideoToText - (Coming Soon)
+- AntiMention - (Coming Soon)
+- AntiTag - (Coming Soon)
+
+
+╭──────────────────╮
+│   *PRIVATE CHAT*  
+╰──────────────────╯
+
+- chat - Wake up the bot
+- sleep - Put the bot to sleep
+- 
 ╭──────────────────╮
 │   *CODE EXECUTION*  
 ╰──────────────────╯
