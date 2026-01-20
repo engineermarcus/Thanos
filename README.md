@@ -194,10 +194,6 @@ Built with:
 
 [![GitHub](https://img.shields.io/badge/GitHub-neimantech1-purple?style=for-the-badge&logo=github)](https://github.com/neimantech1)
 
-```
-█████████████████████████████████████████
-█░░░░░░░░░░░░░░░ I AM INEVITABLE ░░░░░░█
-█████████████████████████████████████████
-```
+<img src="https://files.catbox.moe/ij0la6.png" width="500">
 
 </div>
