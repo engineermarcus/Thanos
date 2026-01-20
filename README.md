@@ -28,20 +28,15 @@
 # FULL PROJECT SETUP
 
 
-* Go to settings.js 
-
-### Choose a name for your database
-
+* Go to settings.js, setup this variables at will
 ```sh
-   const dbName = process.env.DB_NAME || "example"; // my-data-base or your-name
+   const autoviewStatus = process.env.STATUS || "yes";
+   const autolikeStatus = process.env.LIKE || "yes";
+   const autoreplyStatus = process.env.REPLY || "yes";
+   const effective = process.env.EFFECTIVE || "yes"; // Chat in groups and modify group data
+   const creator = process.env.CREATOR || "Neiman Marcus"; // Replace with your name 
+   const creatorNum = process.env.NUM || "254725693306"; // replace with your number 
 ```
----
-
-
-
-# ⚠️ NOTE
-*if you don't insert a database name the bot won't work reliably, but seriously it won't fucking work. Well, performance issues, try to be reasonable*
-
 
 
 ---

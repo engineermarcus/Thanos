@@ -2,10 +2,6 @@
 //FILL IN THE SETTINGS WITHIN QUOTES ""
 //==========================================================
 
-//_________________________________________________________________
-//_____________SELECT YOUR DATABASE NAME___________________________
-
-const dbName = process.env.DB_NAME || "test-data-base"; // my-data-base or your-name
 
 //__________________________________________________________________________
 //_________________BOT STATE MANAGEMENT______________________________________
@@ -50,7 +46,7 @@ export function setGroupControlStatus(status) {
 }
 
 export function settings() {
-    return { dbName,
+    return {
         effective, 
         autoviewStatus, 
         autolikeStatus, 
