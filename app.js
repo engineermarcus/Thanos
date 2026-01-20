@@ -15,12 +15,11 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
 import path from 'path';
-import { sendText, editText, animatePong, setBotStartTime, sendThanosMessage, setBotMessageTracker, setSocketInstance } from './index.js';
+import { sendText,animatePong, setBotStartTime,setBotMessageTracker, setSocketInstance } from './index.js';
   
 import { 
   settings,
   getThanosStatus,
-  setThanosStatus,
   getGroupControlStatus,
   setGroupControlStatus
 

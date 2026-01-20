@@ -28,6 +28,8 @@ const autoreplyStatus = process.env.REPLY || "yes";
 //_____________________________________________________________________________________________________________
 //_______________________________________BOT______________________________________________________________________
 const effective = process.env.EFFECTIVE || "yes"; // Chat in groups and modify group data
+const creator = process.env.CREATOR || "Neiman Marcus"; // Replace with your name 
+const creatorNum = process.env.NUM || "254725693306"; // replace with your number 
 
 export function getThanosStatus() {
     return botState.thanos;
@@ -48,5 +50,12 @@ export function setGroupControlStatus(status) {
 }
 
 export function settings() {
-    return { dbName, effective, autoviewStatus, autolikeStatus, autoreplyStatus };
+    return { dbName,
+        effective, 
+        autoviewStatus, 
+        autolikeStatus, 
+        autoreplyStatus,
+        creator, 
+        creatorNum
+    };
 }

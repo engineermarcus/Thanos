@@ -1,17 +1,19 @@
-import { getUrlInfo } from '@whiskeysockets/baileys';
+import { settings } from './settings.js';
+const { creator } = settings();
+const { creatorNum } = settings();
 
 export function getMenuText(thanos, groupControl, stats) {
   return `
 ╔═══════════════╗
-║ *THANOS MD*           
+║ *THANOS MD BOT*           
 ╚═══════════════╝
 
-┏━ *SYSTEM STATUS* ━┓
+┏ *SYSTEM STATUS* ━┓
 ┃ Thanos Mode: ${thanos === "yes" ? "ACTIVE" : "INACTIVE"}
 ┃ Group Control: ${groupControl === "yes" ? "ON" : "OFF"}
 ┃ Banned Users: ${stats.permanentlyMutedCount}
 ┃ Bot Suspects: ${stats.botSuspectsCount}
-┗━━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━┛
 
 ╭──────────────────╮
 │   *BASIC COMMANDS* 
@@ -28,7 +30,7 @@ export function getMenuText(thanos, groupControl, stats) {
 - sticker - Reply to video/GIF to create sticker
 - stalk @user - message privately
 ╭──────────────────╮
-│   *CODE EXECUTION  
+│   *CODE EXECUTION*  
 ╰──────────────────╯
 
  *Run any code instantly*
@@ -51,17 +53,18 @@ _*(100 ++) Supported languages*_
 
 
 ╭───────────────╮
-│   *INFO*        
+│        *INFO*        
 ╰───────────────╯
 
-*Creator:* MCU NEIMAN TECH
-*Version:* 1.0.0
-*Power:* All 6 Infinity Stones
-*Purpose:* Perfect Balance
+*DEVELOPERS:* _*NEIMAN TECH ENTERPRISES*_
+*CREATOR*: *${creator}*
+*PHONE:* *${creatorNum}*
+*VERSION:* _1.2.0_
+*POWER:* _2 Infinity Stones_
+*PURPOSE:* _Balance_
 
-_"I am inevitable."_ - Thanos
 
-╚══════════════════════╝`;
+`;
 }
 
 export async function sendMenuWithImage(sock, chatJid, quotedMsg, thanos, groupControl, stats) {
