@@ -105,7 +105,7 @@ export async function sendThanosMessage(WASocket, userMessage, senderNumber, quo
         
         const senderJid = originalMsg.key.participant || originalMsg.key.remoteJid;
         const contextInfo = await getContextInfo(senderNumber, senderJid);
-        const history = await getHistory(senderNumber, 10);
+        const history = await getHistory(senderNumber, 100);
         
         const contextualMessage = contextInfo.chatType === 'group' 
             ? `[GROUP: ${contextInfo.chatName}] ${userMessage}`
