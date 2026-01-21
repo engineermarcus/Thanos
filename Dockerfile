@@ -9,9 +9,7 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     ruby \
     php-cli \
-    # Changed to JDK so you can compile (javac/kotlinc)
     default-jdk \ 
-    # Adding Kotlin Compiler specifically
     kotlin \
     golang-go \
     rustc \

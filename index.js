@@ -1,5 +1,6 @@
 import { sendMessageToThanos } from './Thanos/thanos.js';
 import { getHistory, addMessage } from './history.js';
+import { chunk } from './test.js';
 
 let botStartTime = Date.now();
 let botMessageTracker = null;
@@ -90,7 +91,6 @@ export async function editText(WASocket, newText, senderNumber, messageToEdit){
         });
     }
 }
-
 export async function sendThanosMessage(WASocket, userMessage, senderNumber, quotedMsg, originalMsg) {
 
     console.log('📤 sendThanosMessage called with:', {
@@ -101,19 +101,6 @@ export async function sendThanosMessage(WASocket, userMessage, senderNumber, quo
     });
 
     try {
-        
-        const sentMsg = await WASocket.sendMessage(senderNumber, { 
-            text: `typing....`
-        }, quotedMsg ? { quoted: quotedMsg } : {});
-   
-       
-        
-        if (sentMsg && sentMsg.key && sentMsg.key.id) {
-            trackBotMessage(sentMsg.key.id);
-        }
-        
-        console.log('✅ Initial "typing..." message sent');
-
         console.log('🤖 Getting Thanos response...');
         
         const senderJid = originalMsg.key.participant || originalMsg.key.remoteJid;
@@ -131,7 +118,17 @@ export async function sendThanosMessage(WASocket, userMessage, senderNumber, quo
         await addMessage(senderNumber, 'user', userMessage);
         await addMessage(senderNumber, 'assistant', response);
         
-        await editText(WASocket, response, senderNumber, sentMsg);
+        const sentMsg = await WASocket.sendMessage(senderNumber, { 
+            text: response.split(" ")[0]
+        }, quotedMsg ? { quoted: quotedMsg } : {});
+   
+        if (sentMsg && sentMsg.key && sentMsg.key.id) {
+            trackBotMessage(sentMsg.key.id);
+        }
+        
+        await chunk(response, async (block) => {
+            await editText(WASocket, block, senderNumber, sentMsg);
+        });
         
         console.log(`✅ Thanos responded: ${response.length} chars`);
         console.log('📨 Response sent to:', senderNumber);
@@ -151,7 +148,6 @@ export async function sendThanosMessage(WASocket, userMessage, senderNumber, quo
         return null;
     }
 }
-
 export async function animatePong(WASocket, senderNumber, sentMessage) {
     // Just keep the simple pong response - no animation needed
     // The initial "pong 🏓" message stays as is
