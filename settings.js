@@ -5,7 +5,7 @@
 //_________________________________________________________________
 //_____________SELECT YOUR DATABASE NAME___________________________
 
-const dbName = process.env.DB_NAME || "another"; // my-data-base or your-name
+const dbName = process.env.DB_NAME || ""; // my-data-base or your-name
 
 //__________________________________________________________________________
 //_________________BOT STATE MANAGEMENT______________________________________
